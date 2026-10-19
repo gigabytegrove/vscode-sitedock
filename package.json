@@ -1,0 +1,340 @@
+{
+  "name": "sitedock",
+  "displayName": "SiteDock — Live FTP & SFTP",
+  "description": "Multi-site live FTP, FTPS and SFTP editing with native media previews, site-root-constrained symlinks and transfer activity.",
+  "version": "0.1.9",
+  "publisher": "GigabyteGrove",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "ftp",
+    "ftps",
+    "sftp",
+    "remote",
+    "live edit",
+    "multi site"
+  ],
+  "activationEvents": [
+    "onCommand:sitedock.add",
+    "onCommand:sitedock.edit",
+    "onCommand:sitedock.remove",
+    "onCommand:sitedock.test",
+    "onCommand:sitedock.refresh",
+    "onCommand:sitedock.open",
+    "onCommand:sitedock.newFile",
+    "onCommand:sitedock.newFolder",
+    "onCommand:sitedock.rename",
+    "onCommand:sitedock.delete",
+    "onCommand:sitedock.upload",
+    "onCommand:sitedock.download",
+    "onCommand:sitedock.openRoot",
+    "onView:sitedock.sites",
+    "onFileSystem:sitedock",
+    "onCommand:sitedock.diagnostics",
+    "onCommand:sitedock.installLibraries",
+    "onCommand:sitedock.authDiagnostics",
+    "onView:sitedock.activity",
+    "onCommand:sitedock.showActivity",
+    "onCommand:sitedock.clearActivity",
+    "onCommand:sitedock.cancelActivity",
+    "onCommand:sitedock.activityDetails",
+    "onCommand:sitedock.uploadFolder",
+    "onCommand:sitedock.downloadFolder",
+    "onCommand:sitedock.retryActivity",
+    "onCommand:sitedock.openAsText",
+    "onCommand:sitedock.openExternal"
+  ],
+  "main": "./src/extension.js",
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
+  "icon": "media/icon.png",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sitedock",
+          "title": "SiteDock",
+          "icon": "media/activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "sitedock": [
+        {
+          "id": "sitedock.sites",
+          "name": "My Servers"
+        },
+        {
+          "id": "sitedock.activity",
+          "name": "Transfers & Activity"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "sitedock.add",
+        "title": "SiteDock: Add Server",
+        "icon": "$(add)"
+      },
+      {
+        "command": "sitedock.edit",
+        "title": "SiteDock: Edit Server",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "sitedock.remove",
+        "title": "SiteDock: Remove Server",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "sitedock.test",
+        "title": "SiteDock: Test Connection",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "sitedock.refresh",
+        "title": "SiteDock: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sitedock.authDiagnostics",
+        "title": "SiteDock: Diagnose SSH Authentication",
+        "icon": "$(info)"
+      },
+      {
+        "command": "sitedock.open",
+        "title": "SiteDock: Open Remote File"
+      },
+      {
+        "command": "sitedock.openAsText",
+        "title": "SiteDock: Open as Text",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "sitedock.openExternal",
+        "title": "SiteDock: Open in Desktop App (Local Copy)",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "sitedock.newFile",
+        "title": "SiteDock: New File",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "sitedock.newFolder",
+        "title": "SiteDock: New Folder",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "sitedock.rename",
+        "title": "SiteDock: Rename",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "sitedock.delete",
+        "title": "SiteDock: Delete",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "sitedock.upload",
+        "title": "SiteDock: Upload Files",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "sitedock.download",
+        "title": "SiteDock: Download File",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "sitedock.openRoot",
+        "title": "SiteDock: Open Server as Workspace",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "sitedock.diagnostics",
+        "title": "SiteDock: Show Diagnostics",
+        "icon": "$(output)"
+      },
+      {
+        "command": "sitedock.installLibraries",
+        "title": "SiteDock: Install Connection Libraries",
+        "icon": "$(package)"
+      },
+      {
+        "command": "sitedock.showActivity",
+        "title": "SiteDock: Show Transfers & Activity",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "sitedock.clearActivity",
+        "title": "SiteDock: Clear Finished Activity",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "sitedock.cancelActivity",
+        "title": "SiteDock: Cancel Queued Transfer",
+        "icon": "$(close)"
+      },
+      {
+        "command": "sitedock.activityDetails",
+        "title": "SiteDock: View Activity Details",
+        "icon": "$(info)"
+      },
+      {
+        "command": "sitedock.uploadFolder",
+        "title": "SiteDock: Upload Folder",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "sitedock.downloadFolder",
+        "title": "SiteDock: Download Folder",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "sitedock.retryActivity",
+        "title": "SiteDock: Retry Failed Transfer",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "sitedock.add",
+          "when": "view == sitedock.sites",
+          "group": "navigation@1"
+        },
+        {
+          "command": "sitedock.refresh",
+          "when": "view == sitedock.sites",
+          "group": "navigation@2"
+        },
+        {
+          "command": "sitedock.clearActivity",
+          "when": "view == sitedock.activity",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "sitedock.edit",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "1_config@1"
+        },
+        {
+          "command": "sitedock.test",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "1_config@2"
+        },
+        {
+          "command": "sitedock.authDiagnostics",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "1_config@2.5"
+        },
+        {
+          "command": "sitedock.openRoot",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "1_config@3"
+        },
+        {
+          "command": "sitedock.remove",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "5_danger@1"
+        },
+        {
+          "command": "sitedock.newFile",
+          "when": "view == sitedock.sites && (viewItem == sitedock.site || viewItem == sitedock.directory || viewItem == sitedock.directoryLink)",
+          "group": "2_new@1"
+        },
+        {
+          "command": "sitedock.newFolder",
+          "when": "view == sitedock.sites && (viewItem == sitedock.site || viewItem == sitedock.directory || viewItem == sitedock.directoryLink)",
+          "group": "2_new@2"
+        },
+        {
+          "command": "sitedock.upload",
+          "when": "view == sitedock.sites && (viewItem == sitedock.site || viewItem == sitedock.directory || viewItem == sitedock.directoryLink)",
+          "group": "3_transfer@1"
+        },
+        {
+          "command": "sitedock.download",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.fileLink)",
+          "group": "3_transfer@2"
+        },
+        {
+          "command": "sitedock.rename",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.directory || viewItem == sitedock.directoryLink || viewItem == sitedock.fileLink || viewItem == sitedock.brokenLink || viewItem == sitedock.outsideLink)",
+          "group": "4_manage@1"
+        },
+        {
+          "command": "sitedock.delete",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.directory || viewItem == sitedock.directoryLink || viewItem == sitedock.fileLink || viewItem == sitedock.brokenLink || viewItem == sitedock.outsideLink)",
+          "group": "4_manage@2"
+        },
+        {
+          "command": "sitedock.cancelActivity",
+          "when": "view == sitedock.activity && (viewItem == sitedock.activity.queued)",
+          "group": "navigation@1"
+        },
+        {
+          "command": "sitedock.uploadFolder",
+          "when": "view == sitedock.sites && (viewItem == sitedock.site || viewItem == sitedock.directory || viewItem == sitedock.directoryLink)",
+          "group": "3_transfer@3"
+        },
+        {
+          "command": "sitedock.downloadFolder",
+          "when": "view == sitedock.sites && (viewItem == sitedock.directory || viewItem == sitedock.directoryLink)",
+          "group": "3_transfer@4"
+        },
+        {
+          "command": "sitedock.retryActivity",
+          "when": "view == sitedock.activity && viewItem == sitedock.activity.failedRetry",
+          "group": "navigation@2"
+        },
+        {
+          "command": "sitedock.open",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.fileLink)",
+          "group": "0_open@1"
+        },
+        {
+          "command": "sitedock.openAsText",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.fileLink)",
+          "group": "0_open@2"
+        },
+        {
+          "command": "sitedock.openExternal",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.fileLink)",
+          "group": "0_open@3"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/extension.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
+    "package": "vsce package --allow-missing-repository",
+    "package:all": "npm run check && npm run package"
+  },
+  "dependencies": {
+    "basic-ftp": "^6.2.3",
+    "ssh2-sftp-client": "^12.1.1"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gigabytegrove/sitedock.git"
+  },
+  "homepage": "https://github.com/gigabytegrove/sitedock#readme",
+  "bugs": {
+    "url": "https://github.com/gigabytegrove/sitedock/issues"
+  }
+}

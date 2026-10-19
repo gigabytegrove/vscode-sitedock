@@ -1,0 +1,8 @@
+node_modules/
+*.vsix
+*.tgz
+coverage/
+.DS_Store
+SiteDock-build.log
+*.log
+.vscode-test/
