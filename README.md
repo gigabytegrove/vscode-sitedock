@@ -64,7 +64,7 @@ Right-click **Open as Text** to inspect a file's source, including SVG markup. *
 
 - Desktop **Visual Studio Code 1.100.0 or newer** (the project is not a browser-based FTP client).
 - Access to an FTP, FTPS, or SFTP server.
-- **Node.js with npm**, plus connectivity to \`registry.npmjs.org\`, for the one-time transport-library setup in this version.
+- **Node.js with npm**, plus connectivity to `registry.npmjs.org`, for the one-time transport-library setup in this version.
 
 ### Install the extension
 
@@ -139,7 +139,7 @@ SiteDock is intended for authorized remote-server access.
 - **Live writes are not guaranteed atomic.** Interrupted network transfers may leave incomplete remote uploads; keep server-side backups.
 - **Conflict checks are best-effort.** They compare server-provided file metadata, which may not detect every concurrent edit.
 - **External apps are separate.** Opening a downloaded local copy in another application does not enable automatic synchronization.
-- **Transport installation is not bundled into startup.** The v0.1.9 runtime invokes npm once to prepare \`basic-ftp\` and \`ssh2-sftp-client\` in VS Code's writable extension storage.
+- **Transport installation is not bundled into startup.** The v0.1.9 runtime invokes npm once to prepare `basic-ftp` and `ssh2-sftp-client` in VS Code's writable extension storage.
 
 ## Troubleshooting
 
@@ -155,7 +155,7 @@ Compare the connection with an independent SSH/SFTP client before changing serve
 <details>
 <summary><strong>Connection libraries won't install</strong></summary>
 
-Install Node.js LTS and ensure \`node\` and \`npm\` are accessible on your PATH. Confirm access to \`registry.npmjs.org\`, then run **SiteDock: Install Connection Libraries** again. Read **Output → SiteDock** for the underlying npm error.
+Install Node.js LTS and ensure `node` and `npm` are accessible on your PATH. Confirm access to `registry.npmjs.org`, then run **SiteDock: Install Connection Libraries** again. Read **Output → SiteDock** for the underlying npm error.
 
 </details>
 
@@ -169,7 +169,7 @@ Hover over the link to inspect its target. It may be broken, inaccessible to the
 <details>
 <summary><strong>An image, PDF, or other file isn't previewing correctly</strong></summary>
 
-Common images use VS Code's built-in preview, with a fallback for supported images. Other types depend on installed VS Code editor support; for example, PDFs may require a compatible preview extension. Some editors cannot open \`sitedock://\` resources. Use **Open in Desktop App (Local Copy)** when needed, then upload any changes manually.
+Common images use VS Code's built-in preview, with a fallback for supported images. Other types depend on installed VS Code editor support; for example, PDFs may require a compatible preview extension. Some editors cannot open `sitedock://` resources. Use **Open in Desktop App (Local Copy)** when needed, then upload any changes manually.
 
 </details>
 
@@ -183,7 +183,7 @@ Run **Developer: Reload Window** and then **SiteDock: Show Diagnostics**. Verify
 <details>
 <summary><strong>My sites disappeared after switching from a local test build</strong></summary>
 
-Older test packages used the identity \`sitedock-local.sitedock\`. The Gigabyte Grove build uses \`GigabyteGrove.sitedock\`, which VS Code treats as a **different extension** with separate global state and SecretStorage. Sites and credentials are **not automatically migrated**. Keep the older installation until you've recreated and tested your connections. Never export passwords into plaintext configuration files.
+Older test packages used the identity `sitedock-local.sitedock`. The Gigabyte Grove build uses `GigabyteGrove.sitedock`, which VS Code treats as a **different extension** with separate global state and SecretStorage. Sites and credentials are **not automatically migrated**. Keep the older installation until you've recreated and tested your connections. Never export passwords into plaintext configuration files.
 
 </details>
 
@@ -191,23 +191,23 @@ For reproducible defects, [open an issue](https://github.com/gigabytegrove/vscod
 
 ## Build from source
 
-The repository includes the extension source, automated tests, and an official \`@vscode/vsce\` packaging workflow.
+The repository includes the extension source, automated tests, and an official `@vscode/vsce` packaging workflow.
 
-\`\`\`bash
+```bash
 git clone https://github.com/gigabytegrove/vscode-sitedock.git
 cd vscode-sitedock
 npm install
 npm run check
 npm run package
-\`\`\`
+```
 
-The resulting \`.vsix\` can be installed through **Extensions: Install from VSIX...**. The project uses Node.js 22 in [GitHub Actions](.github/workflows/build.yml).
+The resulting `.vsix` can be installed through **Extensions: Install from VSIX...**. The project uses Node.js 22 in [GitHub Actions](.github/workflows/build.yml).
 
-On Windows, you can also run **\`Build-Official-VSIX.cmd\`** to build and validate a release candidate; see [PUBLISHING.md](PUBLISHING.md) for Marketplace packaging details.
+On Windows, you can also run **`Build-Official-VSIX.cmd`** to build and validate a release candidate; see [PUBLISHING.md](PUBLISHING.md) for Marketplace packaging details.
 
 ### Project structure
 
-\`\`\`text
+```text
 src/
   extension.js    VS Code activation, commands, and views
   connection.js   FTP/FTPS/SFTP transport and remote operations
@@ -225,13 +225,13 @@ ui/
 media/            Extension icon and Activity Bar artwork
 test/             Automated Node.js tests
 .github/workflows/build.yml   CI checks and VSIX artifact
-\`\`\`
+```
 
 The automated suite covers file handling, authentication behavior, activity/transfer logic, and filesystem simulations. **Passing unit tests is not proof of successful integration against every live FTP/SFTP server.**
 
 ## Contributing and publishing
 
-Bug reports, reproducible test cases, documentation improvements, and pull requests are welcome. Please run \`npm run check\` before submitting code changes, and do not include credentials or production-server information in issues or commits.
+Bug reports, reproducible test cases, documentation improvements, and pull requests are welcome. Please run `npm run check` before submitting code changes, and do not include credentials or production-server information in issues or commits.
 
 The VS Code Marketplace publishing process is tracked separately from source development. See [PUBLISHING.md](PUBLISHING.md) for instructions; a GitHub build artifact does **not** mean that a Marketplace release has been approved.
 
