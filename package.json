@@ -331,10 +331,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gigabytegrove/sitedock.git"
+    "url": "https://github.com/gigabytegrove/vscode-sitedock.git"
   },
-  "homepage": "https://github.com/gigabytegrove/sitedock#readme",
+  "homepage": "https://github.com/gigabytegrove/vscode-sitedock#readme",
   "bugs": {
-    "url": "https://github.com/gigabytegrove/sitedock/issues"
+    "url": "https://github.com/gigabytegrove/vscode-sitedock/issues"
   }
 }
