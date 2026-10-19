@@ -1,0 +1,7 @@
+.git/**
+.github/**
+.vscode/**
+test/**
+*.tgz
+*.vsix
+node_modules/.cache/**
