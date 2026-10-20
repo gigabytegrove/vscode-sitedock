@@ -27,12 +27,14 @@ async function main(){
   const expected=parseChecksum(fs.readFileSync(checksum,'utf8'),path.basename(vsix));
   if(actual!==expected)throw new Error('Release checksum verification failed.');
   await validateVSIX(vsix,{version:pkg.version});
-  const metadata=invoke(['repo','view',repo,'--json','visibility,isPrivate'],{json:true});
+  const metadata=invoke(['repo','view',repo,'--json','visibility,isPrivate,defaultBranchRef'],{json:true});
   if(metadata.isPrivate||metadata.visibility==='PRIVATE')throw new Error(`Repository ${repo} is private. Anonymous VS Code clients cannot download releases. Use a PUBLIC release repository.`);
+  const branch=metadata.defaultBranchRef?.name;
+  if(!branch)throw new Error('The public release repository must have an initialized default branch.');
   const notes=path.resolve(__dirname,'..','RELEASE_NOTES.md');
   const releaseArgs=['release','create',tag,vsix,checksum,'--repo',repo,'--title',`SiteDock ${pkg.version}`];
   // Tag must already exist and point to the exact approved source build.
-  releaseArgs.push('--target','main'); // gh creates the release tag from the public release repo's main branch if missing.
+  releaseArgs.push('--target',branch); // gh creates a release tag at this repository's default branch if absent.
   if(prerelease)releaseArgs.push('--prerelease');
   if(fs.existsSync(notes))releaseArgs.push('--notes-file',notes);
   else releaseArgs.push('--notes',`SiteDock ${pkg.version}. SHA-256 verified GitHub-only VSIX distribution.`);
