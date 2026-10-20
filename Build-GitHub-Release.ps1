@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 [CmdletBinding()]
-param([string]$Repository='gigabytegrove/vscode-sitedock',[switch]$Publish)
+param([string]$Repository='gigabytegrove/sitedock-releases',[switch]$Publish)
 $ErrorActionPreference='Stop'
 Push-Location -LiteralPath $PSScriptRoot
 try {

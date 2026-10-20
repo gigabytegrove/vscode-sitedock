@@ -50,7 +50,7 @@ function releaseAsset(release){
   if(typeof artifact.browser_download_url!=='string'||!artifact.browser_download_url.startsWith(expectedPrefix))return null;
   return {name,asset:artifact,digest:parsedDigest,checksum};
 }
-function chooseRelease(releases,{currentVersion,channel='stable',repository='gigabytegrove/vscode-sitedock'}={}){
+function chooseRelease(releases,{currentVersion,channel='stable',repository='gigabytegrove/sitedock-releases'}={}){
   if(!versionParts(currentVersion))throw new Error('The installed SiteDock version is invalid.');
   if(channel!=='stable'&&channel!=='beta')throw new Error('Unknown update channel.');
   releaseRepository(repository);
