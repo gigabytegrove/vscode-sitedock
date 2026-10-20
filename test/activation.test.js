@@ -33,7 +33,7 @@ test('activation registers commands without attempting a network library downloa
       withProgress:async(_opts,action)=>{progressCalls++;return action();},
       activeTextEditor:null
     },
-    workspace:{registerFileSystemProvider:noop,onDidSaveTextDocument:noop,openTextDocument:async u=>({uri:u})},
+    workspace:{getConfiguration:()=>({get:(_key,fallback)=>fallback}),onDidChangeConfiguration:noop,registerFileSystemProvider:noop,onDidSaveTextDocument:noop,openTextDocument:async u=>({uri:u})},
     Uri:{from:x=>x,file:x=>({scheme:'file',fsPath:x,path:x})},
     commands:{registerCommand:(id,fn)=>{commands.set(id,fn);return noop();},executeCommand:async(...args)=>{editorOpens.push(args);}},
     FileType:{Directory:2,File:1,SymbolicLink:64},
@@ -41,7 +41,7 @@ test('activation registers commands without attempting a network library downloa
     FileSystemError:{FileNotFound:()=>new Error('not found')}
   };
   const extensionPath=path.resolve(__dirname,'..');
-  const ctx={extensionPath,globalStorageUri:{fsPath:path.join(extensionPath,'.test-global-storage')},subscriptions:[],globalState:{get:()=>[],update:async()=>{}},secrets:{get:async()=>undefined,store:async()=>{},delete:async()=>{}}};
+  const ctx={extension:{packageJSON:{version:'0.3.0'}},extensionPath,globalStorageUri:{fsPath:path.join(extensionPath,'.test-global-storage')},subscriptions:[],globalState:{get:()=>[],update:async()=>{}},secrets:{get:async()=>undefined,store:async()=>{},delete:async()=>{}}};
   const original=Module._load;
   let extension;
   try{

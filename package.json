@@ -1,8 +1,8 @@
 {
   "name": "sitedock",
-  "displayName": "SiteDock \u2014 Live FTP & SFTP",
-  "description": "Flexible multi-site FTP, FTPS and SFTP manager with focused workspaces, native file previews, and transfer activity.",
-  "version": "0.2.0",
+  "displayName": "SiteDock — Live FTP & SFTP",
+  "description": "Multi-site FTP, FTPS and SFTP editor with focused site management, secure GitHub Releases updates, media previews, and transfer activity.",
+  "version": "0.3.0",
   "publisher": "GigabyteGrove",
   "license": "MIT",
   "engines": {
@@ -64,7 +64,10 @@
     "onCommand:sitedock.switchSite",
     "onCommand:sitedock.openMultiple",
     "onCommand:sitedock.setViewMode",
-    "onView:sitedock.managerSites"
+    "onView:sitedock.managerSites",
+    "onCommand:sitedock.checkUpdates",
+    "onCommand:sitedock.updateSettings",
+    "onCommand:sitedock.viewReleases"
   ],
   "main": "./src/extension.js",
   "extensionKind": [
@@ -277,6 +280,21 @@
         "command": "sitedock.setViewMode",
         "title": "SiteDock: Change Explorer Mode",
         "icon": "$(list-selection)"
+      },
+      {
+        "command": "sitedock.checkUpdates",
+        "title": "SiteDock: Check for Updates",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "sitedock.updateSettings",
+        "title": "SiteDock: Update Settings",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "sitedock.viewReleases",
+        "title": "SiteDock: View GitHub Releases",
+        "icon": "$(link-external)"
       }
     ],
     "menus": {
@@ -459,13 +477,57 @@
           "group": "0_open@1"
         }
       ]
+    },
+    "configuration": {
+      "title": "SiteDock · GitHub Updates",
+      "properties": {
+        "sitedock.updates.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check GitHub Releases for SiteDock updates when VS Code starts and periodically while open."
+        },
+        "sitedock.updates.channel": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "beta"
+          ],
+          "default": "stable",
+          "enumDescriptions": [
+            "Install non-pre-release versions only.",
+            "Include pre-release builds, plus stable versions."
+          ],
+          "description": "GitHub release channel to track."
+        },
+        "sitedock.updates.repository": {
+          "type": "string",
+          "default": "gigabytegrove/vscode-sitedock",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*/[-A-Za-z0-9_.]+$",
+          "description": "Public GitHub repository containing SiteDock releases (owner/repo). For private source, use a separate public releases repository; no tokens or credentials are stored."
+        },
+        "sitedock.updates.checkIntervalHours": {
+          "type": "number",
+          "default": 12,
+          "minimum": 1,
+          "maximum": 168,
+          "description": "Minimum time between automatic update checks, in hours (1–168)."
+        },
+        "sitedock.updates.autoInstall": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically download and install checksum-verified GitHub updates without asking first, then prompt to reload. Disabled by default."
+        }
+      }
     }
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/extension.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
+    "check": "node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
     "package": "vsce package --allow-missing-repository",
-    "package:all": "npm run check && npm run package"
+    "package:all": "npm run check && npm run package",
+    "release:build": "node scripts/build-release.js",
+    "release:publish": "node scripts/publish-release.js",
+    "release:verify": "node scripts/verify-release.js"
   },
   "dependencies": {
     "basic-ftp": "^6.2.3",
@@ -476,10 +538,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gigabytegrove/sitedock.git"
+    "url": "https://github.com/gigabytegrove/vscode-sitedock.git"
   },
-  "homepage": "https://github.com/gigabytegrove/sitedock#readme",
+  "homepage": "https://github.com/gigabytegrove/vscode-sitedock#readme",
   "bugs": {
-    "url": "https://github.com/gigabytegrove/sitedock/issues"
+    "url": "https://github.com/gigabytegrove/vscode-sitedock/issues"
   }
 }

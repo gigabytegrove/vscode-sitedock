@@ -16,6 +16,7 @@ const {validName,safeChildPath}=require('./paths');
 const {ensureRuntime,diagnostics}=require('./runtime');
 const manifest=require('../package.json');
 const {openRemoteFile,openInDesktopApp}=require('./opening');
+const {createUpdater}=require('./updates');
 
 let disposeIO;
 function uriFor(node) {return vscode.Uri.from({scheme:'sitedock',authority:node.id,path:node.kind==='site'?'/':node.path});}
@@ -104,6 +105,15 @@ async function activate(context) {
   const command=(name,action)=>context.subscriptions.push(vscode.commands.registerCommand(name,async(...args)=>{
     try {await action(...args);}catch(err){vscode.window.showErrorMessage(`SiteDock: ${errorMessage(err)}`);}
   }));
+  const updater=createUpdater(vscode,context,channel);
+  context.subscriptions.push(updater);
+  command('sitedock.checkUpdates',()=>updater.check({manual:true}));
+  command('sitedock.updateSettings',()=>vscode.commands.executeCommand('workbench.action.openSettings','sitedock.updates'));
+  command('sitedock.viewReleases',()=>{
+    const repository=vscode.workspace.getConfiguration('sitedock.updates').get('repository','gigabytegrove/vscode-sitedock');
+    const {releaseRepository}=require('./update-utils');
+    return vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${releaseRepository(repository)}/releases`));
+  });
   const refresh=()=>{tree.refresh();managerTree.refresh();managerPanel?.update();};
   function siteId(node){return typeof node==='string'?node:node?.id;}
   async function getSelected(node){const id=siteId(node);return id?store.get(id):chooseSite();}

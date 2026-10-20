@@ -2,6 +2,7 @@ node_modules/
 *.vsix
 *.tgz
 coverage/
+dist/
 .DS_Store
 SiteDock-build.log
 *.log
