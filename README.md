@@ -232,3 +232,10 @@ MIT licensed; third-party FTP/SFTP libraries retain their own license terms. Rep
 **[Gigabyte Grove](https://github.com/gigabytegrove)** · *Manage your sites. Edit where they live.*
 
 </div>
+
+## v0.5.0 — Extended file operations (development, not released)
+
+- My Servers explorer supports native Ctrl/Shift multi-selection and visible **Move Selected Remote Items** / **Delete Selected Remote Items** toolbar and context-menu actions. Operations are bounded to one site and at most 100 selected entries; moves refuse collisions, missing destinations, and folder-descendant moves. Recursive deletion requires confirmation, and all actions are journaled in Transfers & Activity.
+- SFTP live saves and queued file/folder uploads now stage under randomized sibling filenames, check uploaded byte counts, retain Unix file permissions when replacing an existing file, detect metadata changes and attempt rollback after a failed rename. FTP/FTPS still use their prior upload behavior.
+- **Important:** On SFTP servers without atomic rename-over-existing support, replacing an existing file can have a brief absence window between moving the old version to backup and moving in the staged file. Interrupted operations can leave a `.sitedock-*.backup` requiring manual recovery. Do not call this universally atomic until real-server acceptance.
+- Source tests run locally, but this pass is not packaged or published. Test multi-select moves/deletes, site-link safety, staged-rename failure, and recovery against a controlled real server before v0.5.0 release.

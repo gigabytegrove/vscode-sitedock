@@ -67,7 +67,9 @@
     "onView:sitedock.managerSites",
     "onCommand:sitedock.checkUpdates",
     "onCommand:sitedock.updateSettings",
-    "onCommand:sitedock.viewReleases"
+    "onCommand:sitedock.viewReleases",
+    "onCommand:sitedock.batchMove",
+    "onCommand:sitedock.batchDelete"
   ],
   "main": "./src/extension.js",
   "extensionKind": [
@@ -335,6 +337,16 @@
         "command": "sitedock.setSiteSort",
         "title": "SiteDock: Sort Sites",
         "icon": "$(list-ordered)"
+      },
+      {
+        "command": "sitedock.batchMove",
+        "title": "SiteDock: Move Selected Remote Items",
+        "icon": "$(move)"
+      },
+      {
+        "command": "sitedock.batchDelete",
+        "title": "SiteDock: Delete Selected Remote Items",
+        "icon": "$(trash)"
       }
     ],
     "menus": {
@@ -403,6 +415,16 @@
           "command": "sitedock.setSiteSort",
           "when": "view == sitedock.managerSites",
           "group": "navigation@5"
+        },
+        {
+          "command": "sitedock.batchMove",
+          "when": "view == sitedock.sites",
+          "group": "navigation@6"
+        },
+        {
+          "command": "sitedock.batchDelete",
+          "when": "view == sitedock.sites",
+          "group": "navigation@7"
         }
       ],
       "view/item/context": [
@@ -585,6 +607,16 @@
           "command": "sitedock.searchRemote",
           "when": "view == sitedock.sites && viewItem == sitedock.site",
           "group": "1_navigation@5"
+        },
+        {
+          "command": "sitedock.batchMove",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.directory || viewItem == sitedock.fileLink || viewItem == sitedock.directoryLink)",
+          "group": "4_manage@4"
+        },
+        {
+          "command": "sitedock.batchDelete",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.directory || viewItem == sitedock.fileLink || viewItem == sitedock.directoryLink)",
+          "group": "5_danger@2"
         }
       ]
     },
@@ -613,7 +645,7 @@
           "type": "string",
           "default": "gigabytegrove/vscode-sitedock",
           "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*/[-A-Za-z0-9_.]+$",
-          "description": "Public GitHub repository containing SiteDock releases (owner/repo). For private source, use a separate public releases repository; no tokens or credentials are stored."
+          "description": "Public GitHub Releases repository for SiteDock (owner/repo), normally gigabytegrove/vscode-sitedock."
         },
         "sitedock.updates.checkIntervalHours": {
           "type": "number",
@@ -632,7 +664,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/search-remote.js && node --check src/site-profiles.js && node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
+    "check": "node --check src/staged-upload.js && node --check src/batch-operations.js && node --check src/search-remote.js && node --check src/site-profiles.js && node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
     "package": "vsce package --allow-missing-repository",
     "package:all": "npm run check && npm run package",
     "release:build": "node scripts/build-release.js",

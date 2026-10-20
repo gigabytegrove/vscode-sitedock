@@ -19,6 +19,7 @@ const {openRemoteFile,openInDesktopApp}=require('./opening');
 const {createUpdater}=require('./updates');
 const {exportProfiles,previewImport,MAX_BYTES}=require('./site-profiles');
 const {searchRemoteFiles}=require('./search-remote');
+const {itemsForAction,planBatch,withoutNested,movePlan}=require('./batch-operations');
 
 let disposeIO;
 function uriFor(node) {return vscode.Uri.from({scheme:'sitedock',authority:node.id,path:node.kind==='site'?'/':node.path});}
@@ -59,7 +60,7 @@ async function activate(context) {
   const doRemote=(siteId,op,...args)=>editor.perform(siteId,op,...args);
   tree=new SiteTree(vscode,store,doRemote,workspaces);
   const filesystem=makeFilesystem(vscode,store,io,doRemote,activity);
-  explorer=vscode.window.createTreeView('sitedock.sites',{treeDataProvider:tree,showCollapseAll:true});
+  explorer=vscode.window.createTreeView('sitedock.sites',{treeDataProvider:tree,showCollapseAll:true,canSelectMany:true});
   const activityTree=new ActivityTree(vscode,activity);
   const transfers=vscode.window.createTreeView('sitedock.activity',{treeDataProvider:activityTree});
   transfers.message='Recent transfers and remote edits. Click an item for details.';
@@ -387,6 +388,52 @@ async function activate(context) {
     if(response!=='Delete')return;
     await vscode.workspace.fs.delete(uriFor(node),{recursive:isDir,useTrash:false});refresh();
   });
+  // Native VS Code multi-selection: clicking an unselected item acts only on it.
+  const chosenBatch=node=>planBatch(itemsForAction(node,explorer.selection),store);
+  command('sitedock.batchDelete',async node=>{
+    const batch=chosenBatch(node),site=store.get(batch.siteId);
+    const selected=withoutNested(batch.items);
+    const preview=selected.slice(0,8).map(x=>'• '+x.path).join('\n');
+    const extra=selected.length>8?`\n… and ${selected.length-8} more`:'';
+    const yes=await vscode.window.showWarningMessage(`Permanently delete ${selected.length} remote item(s) from ${site.name}?`,
+      {modal:true,detail:`Folders and their contents are removed recursively. This cannot be undone.\n${preview}${extra}`},'Delete Remote Items');
+    if(yes!=='Delete Remote Items')return;
+    activity.batch(()=>{for(const item of selected){
+      activity.enqueue({kind:'delete',siteName:site.name,label:`Delete ${item.path}`},async(_report,signal)=>{
+        if(signal.aborted)return;
+        const uri=vscode.Uri.from({scheme:'sitedock',authority:item.id,path:item.path});
+        await vscode.workspace.fs.delete(uri,{recursive:item.isDirectory,useTrash:false});
+        refresh();
+      });
+    }});
+    vscode.window.showInformationMessage(`${selected.length} remote deletion(s) added to SiteDock Activity.`);
+  });
+  command('sitedock.batchMove',async node=>{
+    const batch=chosenBatch(node),site=store.get(batch.siteId);
+    const destination=await vscode.window.showInputBox({title:`Move ${batch.items.length} item(s) · ${site.name}`,
+      prompt:'Destination folder relative to the selected site root (for example /assets or /)',
+      value:'/',validateInput:v=>{try{movePlan(batch,v,site);return null;}catch(err){return errorMessage(err);}}});
+    if(destination===undefined)return;
+    const moves=movePlan(batch,destination,site);
+    const folder=await doRemote(site.id,'stat',remotePath(site,posix.normalize(destination)));
+    if(!folder||folder.type!=='directory'||folder.symlink)throw new Error('The destination must be an existing ordinary folder.');
+    for(const {destination:target} of moves){
+      if(await doRemote(site.id,'stat',remotePath(site,target)))throw new Error(`Destination already exists: ${target}. No items were moved.`);
+    }
+    const yes=await vscode.window.showWarningMessage(`Move ${moves.length} remote item(s) on ${site.name}?`,
+      {modal:true,detail:`To folder: ${posix.normalize(destination)}\nNo existing destination files will be replaced.`},'Move Remote Items');
+    if(yes!=='Move Remote Items')return;
+    activity.batch(()=>{for(const {item,destination:target} of moves){
+      activity.enqueue({kind:'move',siteName:site.name,label:`Move ${item.path} → ${target}`},async(_report,signal)=>{
+        if(signal.aborted)return;
+        const from=vscode.Uri.from({scheme:'sitedock',authority:item.id,path:item.path});
+        const to=vscode.Uri.from({scheme:'sitedock',authority:item.id,path:target});
+        await vscode.workspace.fs.rename(from,to,{overwrite:false});
+        refresh();
+      });
+    }});
+    vscode.window.showInformationMessage(`${moves.length} remote move(s) added to SiteDock Activity.`);
+  });
   command('sitedock.upload',async node=>{
     if(!node)return;
     if(node.kind==='entry' && node.type!=='directory')throw new Error('Select a folder or server for uploads.');
@@ -415,12 +462,12 @@ async function activate(context) {
         if(signal.aborted)return;
         report(0,0,'Reading local file');
         if(source.scheme==='file'&&source.fsPath){
-          await doRemote(site.id,'uploadLocal',source.fsPath,remotePath(site,target.path),report);
+          await doRemote(site.id,site.protocol==='sftp'?'uploadLocalStaged':'uploadLocal',source.fsPath,remotePath(site,target.path),report);
         }else{
           const bytes=await vscode.workspace.fs.readFile(source);
           if(signal.aborted)return;
           report(0,bytes.byteLength,'Uploading to server');
-          await doRemote(site.id,'write',remotePath(site,target.path),bytes);
+          await doRemote(site.id,site.protocol==='sftp'?'writeStaged':'write',remotePath(site,target.path),bytes);
           report(bytes.byteLength,bytes.byteLength,'Uploaded');
         }
         filesystem.notifyModified(target,!exists);
@@ -479,11 +526,11 @@ async function activate(context) {
         if(st && st.type==='directory')throw new Error('Destination is a directory.');
         if(st && !replace)return {skipped:true,reason:'Existing remote file skipped'};
         if(entry.local.scheme==='file' && entry.local.fsPath)
-          await doRemote(site.id,'uploadLocal',entry.local.fsPath,target,report);
+          await doRemote(site.id,site.protocol==='sftp'?'uploadLocalStaged':'uploadLocal',entry.local.fsPath,target,report);
         else{
           const bytes=await vscode.workspace.fs.readFile(entry.local);
           if(signal.aborted)return;
-          report(0,bytes.length,'Uploading');await doRemote(site.id,'write',target,bytes);
+          report(0,bytes.length,'Uploading');await doRemote(site.id,site.protocol==='sftp'?'writeStaged':'write',target,bytes);
           report(bytes.length,bytes.length,'Uploaded');
         }
         const remoteUri=vscode.Uri.from({scheme:'sitedock',authority:site.id,path:entry.remote});

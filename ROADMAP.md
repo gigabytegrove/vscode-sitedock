@@ -21,3 +21,9 @@ The v0.4.0 VSIX was officially packaged, SHA-256 checked and published directly 
 6. Advanced SSH options, keyboard accessibility, screen-reader validation, and VSIX packaging improvements.
 
 No feature is called complete until its UI is visible, behavior is covered, and the release is tested on real VS Code and remote servers.
+
+## Additional v0.5.0 work (source, not yet released)
+
+- Native remote tree multi-selection for bounded move and delete with collision/root protections, confirmation and activity reporting.
+- SFTP staged uploads with size checks, permission preservation and rollback attempts. This is **not guaranteed POSIX atomic overwrite** on all SFTP servers; FTP/FTPS remain direct-write.
+- Next: drag-and-drop, safe remote copy/paste, transfer resumability and end-to-end desktop/real-server QA.

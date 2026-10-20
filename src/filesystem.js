@@ -52,7 +52,7 @@ function makeFilesystem(vscode,store,io,run,activity=null) {
       if (existing && baseline && ((baseline.mtime && existing.mtime && baseline.mtime!==existing.mtime) || baseline.size!==existing.size)) {
         throw vscode.FileSystemError.Unavailable('The remote file changed since you opened it. Reopen or compare it before saving to avoid overwriting changes.');
       }
-      await audited(uri,'upload',`Save ${uri.path}`,()=>doRun(uri,'write',path,content));
+      await audited(uri,'upload',`Save ${uri.path}`,()=>doRun(uri,store.get(uri.authority)?.protocol==='sftp'?'writeStaged':'write',path,content));
       const after=await getStat(uri).catch(()=>null);
       snapshots.set(key(uri),after ? {size:after.size,mtime:after.mtime}:{size:content.length,mtime:0});
       notify(uri,existing?vscode.FileChangeType.Changed:vscode.FileChangeType.Created);

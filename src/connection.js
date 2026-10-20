@@ -8,6 +8,7 @@ const posix = require('node:path').posix;
 const {Readable,Writable} = require('node:stream');
 const {timingSafeEqual} = require('node:crypto');
 const {loadLibrary} = require('./runtime');
+const {stagedReplace}=require('./staged-upload');
 
 class HostKeyError extends Error {
   constructor(fingerprint,previous='') {
@@ -157,7 +158,7 @@ async function requireContained(session,site,method,args) {
   let paths=[];
   const parentOnly=['unlink','mkdir'];
   if (['list','read','downloadLocal','rmdir','getPermissions','setPermissions'].includes(method)) paths=[[args[0],false]];
-  else if(['write','uploadLocal'].includes(method)) paths=[[method==='write'?args[0]:args[1],true]];
+  else if(['write','uploadLocal','writeStaged','uploadLocalStaged'].includes(method)) paths=[[(method==='write'||method==='writeStaged')?args[0]:args[1],true]];
   else if(parentOnly.includes(method)) paths=[[args[0],true,true]];
   else if(method==='rename') paths=[[args[0],true,true],[args[1],true,true]];
   for(const [path,allowMissing,parentOnlyMode] of paths){
@@ -255,6 +256,27 @@ async function operation(session,method,...args) {
     }
     if(!Number.isInteger(args[1])||args[1]<0||args[1]>0o7777)throw new Error('Permission mode must contain 3 or 4 octal digits.');
     return c.chmod(args[0],args[1]);
+  }
+  if(method==='writeStaged'||method==='uploadLocalStaged'){
+    if(session.type!=='sftp')throw new Error('Staged uploads currently require SFTP.');
+    const isLocal=method==='uploadLocalStaged';
+    const destination=isLocal?args[1]:args[0];
+    const local=isLocal?args[0]:null;
+    const expectedBytes=isLocal?(await fs.stat(local)).size:Buffer.byteLength(args[1]);
+    return stagedReplace({destination,expectedBytes,
+      stat:async remote=>{
+        const st=await sftpStat(c,remote);
+        if(st?.type==='file'&&!st.symlink){
+          const raw=await c.stat(remote);
+          return {...st,mode:raw.mode};
+        }
+        return st;
+      },
+      put:tmp=>isLocal?operation(session,'uploadLocal',local,tmp,args[2]):operation(session,'write',tmp,args[1]),
+      rename:(a,b)=>c.rename(a,b),
+      remove:tmp=>c.delete(tmp),
+      chmod:(tmp,mode)=>c.chmod(tmp,mode)
+    });
   }
   if(method==='uploadLocal') {
     const [local,remote,progress]=args;

@@ -17,3 +17,10 @@
 - Controlled FTP/FTPS/SFTP search tests, including large trees, symlinks and permission failures.
 - Verify original server profiles and secrets remain unchanged.
 - Publish only under `gigabytegrove/vscode-sitedock/releases` after acceptance. Do not use GitHub Actions.
+
+## Further v0.5.0 development changes (not released)
+
+- Multi-select files/folders directly in the remote explorer, then Move Selected or Delete Selected using toolbar/context menu.
+- Move operations require a single server, existing destination folder, safe paths and no name collisions; delete batches require modal confirmation.
+- SFTP uses sibling temporary files and previous-version backups for staged uploads and rollback attempts. **Not POSIX atomic replacement on every server.** FTP/FTPS remain direct-write.
+- Automated unit/mocked-transport tests must be followed by desktop VS Code acceptance and controlled real-server tests before publication.
