@@ -92,3 +92,23 @@ test('npm subprocess receives one safe, script-disabled installation request',as
     for(const [name,version] of Object.entries(RUNTIME)) assert.ok(flags.includes(`${name}@${version}`));
   }finally{process.env.PATH=oldPath;await fs.rm(root,{recursive:true,force:true});}
 });
+
+test('bundled release dependencies are preferred without ever invoking npm',async()=>{
+  const storage=await makeRoot(),bundle=await makeRoot();
+  try{
+    await fakeInstaller(bundle);
+    const result=await prepareRuntime(storage,{bundleRoot:bundle,installer:async()=>{throw new Error('npm should never run when bundled');}});
+    assert.equal(result.bundled,true);assert.equal(result.installed,false);
+    assert.equal(result.root,bundle);
+    assert.equal(loadLibrary('basic-ftp').name,'basic-ftp');
+    await assert.rejects(fs.access(path.join(storage,'transport-v2')));
+  }finally{await fs.rm(storage,{recursive:true,force:true});await fs.rm(bundle,{recursive:true,force:true});}
+});
+
+test('incomplete bundled libraries safely fall back to managed legacy installation',async()=>{
+ const storage=await makeRoot(),bundle=await makeRoot();
+ try{
+   const result=await prepareRuntime(storage,{bundleRoot:bundle,installer:fakeInstaller});
+   assert.equal(result.installed,true);assert.notEqual(result.bundled,true);
+ }finally{await fs.rm(storage,{recursive:true,force:true});await fs.rm(bundle,{recursive:true,force:true});}
+});

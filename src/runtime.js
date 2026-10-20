@@ -61,10 +61,12 @@ function runNpm(cwd,log=()=>{},timeout=PREP_TIMEOUT_MS) {
   });
 }
 
-async function validRuntime(root) {
+async function validRuntime(root,{marker=true}={}) {
   try {
-    const record=JSON.parse(await fs.readFile(path.join(root,MARKER_NAME),'utf8'));
-    if(JSON.stringify(record.packages)!==JSON.stringify(RUNTIME))return false;
+    if(marker){
+      const record=JSON.parse(await fs.readFile(path.join(root,MARKER_NAME),'utf8'));
+      if(JSON.stringify(record.packages)!==JSON.stringify(RUNTIME))return false;
+    }
     for(const [name,version] of Object.entries(RUNTIME)) {
       const info=require.resolve(`${name}/package.json`,{paths:[root]});
       if(JSON.parse(await fs.readFile(info,'utf8')).version!==version)return false;
@@ -75,7 +77,14 @@ async function validRuntime(root) {
   }catch {return false;}
 }
 
-async function prepareRuntime(storageRoot,{installer=runNpm,log=()=>{}}={}) {
+async function prepareRuntime(storageRoot,{installer=runNpm,log=()=>{},bundleRoot=path.resolve(__dirname,'..')}={}) {
+  // Official VSIX builds bundle production dependencies. Prefer those libraries
+  // to running npm on a customer's machine; legacy builds retain a fallback.
+  if(await validRuntime(bundleRoot,{marker:false})) {
+    activeRoot=bundleRoot;
+    log('SiteDock: Using FTP/SFTP libraries bundled in the extension.\n');
+    return {root:bundleRoot,installed:false,bundled:true};
+  }
   if(!storageRoot || typeof storageRoot!=='string')throw new Error('SiteDock storage location is not available.');
   const root=path.resolve(storageRoot,'transport-v2');
   if(await validRuntime(root)) {activeRoot=root;return {root,installed:false};}
@@ -116,5 +125,5 @@ function loadLibrary(name) {
   if(!activeRoot)throw new Error('Connection libraries have not been prepared. Use SiteDock: Install Connection Libraries.');
   return require(require.resolve(name,{paths:[activeRoot]}));
 }
-function diagnostics(){return {storage:activeRoot||'(not prepared)',packages:RUNTIME,installed:Boolean(activeRoot)};}
+function diagnostics(){return {storage:activeRoot||'(not prepared)',packages:RUNTIME,installed:Boolean(activeRoot),bundled:Boolean(activeRoot && activeRoot===path.resolve(__dirname,'..'))};}
 module.exports={ensureRuntime,prepareRuntime,loadLibrary,runNpm,diagnostics,RUNTIME};

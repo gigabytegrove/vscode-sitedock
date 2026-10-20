@@ -1,8 +1,8 @@
 {
   "name": "sitedock",
-  "displayName": "SiteDock — Live FTP & SFTP",
-  "description": "Multi-site live FTP, FTPS and SFTP editing with native media previews, site-root-constrained symlinks and transfer activity.",
-  "version": "0.1.9",
+  "displayName": "SiteDock \u2014 Live FTP & SFTP",
+  "description": "Flexible multi-site FTP, FTPS and SFTP manager with focused workspaces, native file previews, and transfer activity.",
+  "version": "0.2.0",
   "publisher": "GigabyteGrove",
   "license": "MIT",
   "engines": {
@@ -18,7 +18,11 @@
     "sftp",
     "remote",
     "live edit",
-    "multi site"
+    "multi site",
+    "site manager",
+    "site workspace",
+    "dreamweaver",
+    "remote files"
   ],
   "activationEvents": [
     "onCommand:sitedock.add",
@@ -48,7 +52,19 @@
     "onCommand:sitedock.downloadFolder",
     "onCommand:sitedock.retryActivity",
     "onCommand:sitedock.openAsText",
-    "onCommand:sitedock.openExternal"
+    "onCommand:sitedock.openExternal",
+    "onCommand:sitedock.manager",
+    "onCommand:sitedock.openSite",
+    "onCommand:sitedock.focusSite",
+    "onCommand:sitedock.closeSite",
+    "onCommand:sitedock.closeOthers",
+    "onCommand:sitedock.closeAllSites",
+    "onCommand:sitedock.toggleFavorite",
+    "onCommand:sitedock.openSiteWindow",
+    "onCommand:sitedock.switchSite",
+    "onCommand:sitedock.openMultiple",
+    "onCommand:sitedock.setViewMode",
+    "onView:sitedock.managerSites"
   ],
   "main": "./src/extension.js",
   "extensionKind": [
@@ -68,6 +84,10 @@
     },
     "views": {
       "sitedock": [
+        {
+          "id": "sitedock.managerSites",
+          "name": "Site Manager"
+        },
         {
           "id": "sitedock.sites",
           "name": "My Servers"
@@ -202,6 +222,61 @@
         "command": "sitedock.retryActivity",
         "title": "SiteDock: Retry Failed Transfer",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "sitedock.manager",
+        "title": "SiteDock: Open Site Manager",
+        "icon": "$(server-process)"
+      },
+      {
+        "command": "sitedock.openSite",
+        "title": "SiteDock: Open Site",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "sitedock.focusSite",
+        "title": "SiteDock: Focus Site",
+        "icon": "$(target)"
+      },
+      {
+        "command": "sitedock.closeSite",
+        "title": "SiteDock: Close Site",
+        "icon": "$(close)"
+      },
+      {
+        "command": "sitedock.closeOthers",
+        "title": "SiteDock: Close Other Sites",
+        "icon": "$(close-all)"
+      },
+      {
+        "command": "sitedock.closeAllSites",
+        "title": "SiteDock: Close All Sites",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "sitedock.toggleFavorite",
+        "title": "SiteDock: Toggle Site Favorite",
+        "icon": "$(star)"
+      },
+      {
+        "command": "sitedock.openSiteWindow",
+        "title": "SiteDock: Open Site in New Window",
+        "icon": "$(multiple-windows)"
+      },
+      {
+        "command": "sitedock.switchSite",
+        "title": "SiteDock: Switch Active Site",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "sitedock.openMultiple",
+        "title": "SiteDock: Open Multiple Sites",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "sitedock.setViewMode",
+        "title": "SiteDock: Change Explorer Mode",
+        "icon": "$(list-selection)"
       }
     ],
     "menus": {
@@ -220,6 +295,26 @@
           "command": "sitedock.clearActivity",
           "when": "view == sitedock.activity",
           "group": "navigation@2"
+        },
+        {
+          "command": "sitedock.manager",
+          "when": "view == sitedock.managerSites",
+          "group": "navigation@1"
+        },
+        {
+          "command": "sitedock.add",
+          "when": "view == sitedock.managerSites",
+          "group": "navigation@2"
+        },
+        {
+          "command": "sitedock.setViewMode",
+          "when": "view == sitedock.sites",
+          "group": "navigation@3"
+        },
+        {
+          "command": "sitedock.switchSite",
+          "when": "view == sitedock.sites",
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
@@ -312,13 +407,63 @@
           "command": "sitedock.openExternal",
           "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.fileLink)",
           "group": "0_open@3"
+        },
+        {
+          "command": "sitedock.openSite",
+          "when": "view == sitedock.managerSites && viewItem == sitedock.managedClosed",
+          "group": "1_navigation@1"
+        },
+        {
+          "command": "sitedock.focusSite",
+          "when": "view == sitedock.managerSites && viewItem == sitedock.managedOpen",
+          "group": "1_navigation@1"
+        },
+        {
+          "command": "sitedock.closeSite",
+          "when": "view == sitedock.managerSites && viewItem == sitedock.managedOpen",
+          "group": "1_navigation@2"
+        },
+        {
+          "command": "sitedock.openSiteWindow",
+          "when": "view == sitedock.managerSites && (viewItem == sitedock.managedOpen || viewItem == sitedock.managedClosed)",
+          "group": "1_navigation@3"
+        },
+        {
+          "command": "sitedock.toggleFavorite",
+          "when": "view == sitedock.managerSites && (viewItem == sitedock.managedOpen || viewItem == sitedock.managedClosed)",
+          "group": "2_manage@1"
+        },
+        {
+          "command": "sitedock.edit",
+          "when": "view == sitedock.managerSites && (viewItem == sitedock.managedOpen || viewItem == sitedock.managedClosed)",
+          "group": "2_manage@2"
+        },
+        {
+          "command": "sitedock.test",
+          "when": "view == sitedock.managerSites && (viewItem == sitedock.managedOpen || viewItem == sitedock.managedClosed)",
+          "group": "2_manage@3"
+        },
+        {
+          "command": "sitedock.closeOthers",
+          "when": "view == sitedock.managerSites && viewItem == sitedock.managedOpen",
+          "group": "2_manage@4"
+        },
+        {
+          "command": "sitedock.openSite",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "0_open@0"
+        },
+        {
+          "command": "sitedock.closeSite",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "0_open@1"
         }
       ]
     }
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/extension.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
+    "check": "node --check src/extension.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
     "package": "vsce package --allow-missing-repository",
     "package:all": "npm run check && npm run package"
   },
@@ -331,10 +476,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gigabytegrove/vscode-sitedock.git"
+    "url": "https://github.com/gigabytegrove/sitedock.git"
   },
-  "homepage": "https://github.com/gigabytegrove/vscode-sitedock#readme",
+  "homepage": "https://github.com/gigabytegrove/sitedock#readme",
   "bugs": {
-    "url": "https://github.com/gigabytegrove/vscode-sitedock/issues"
+    "url": "https://github.com/gigabytegrove/sitedock/issues"
   }
 }

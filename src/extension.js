@@ -6,6 +6,9 @@ const {SiteIO}=require('./connection');
 const {createSiteEditor}=require('./editor');
 const {makeFilesystem}=require('./filesystem');
 const {SiteTree}=require('./tree');
+const {SiteWorkspaces}=require('./workspaces');
+const {ManagerTree}=require('./manager-tree');
+const {createManagerPanel}=require('./manager-panel');
 const {ActivityQueue,ActivityTree}=require('./activity');
 const {remotePath}=require('./paths');
 const {planUploadFolder,planDownloadFolder}=require('./bulk');
@@ -30,7 +33,7 @@ async function activate(context) {
     if (!ready) {
       ready=vscode.window.withProgress({
         location:vscode.ProgressLocation.Notification,
-        title:'SiteDock: Installing connection libraries with npm (first connection only)',
+        title:'SiteDock: Preparing connection libraries',
         cancellable:false
       },()=>ensureRuntime(runtimeLocation,{log:message=>channel.append(message)})).catch(err=>{
         ready=undefined; // permit retry after proxy/network errors
@@ -42,18 +45,29 @@ async function activate(context) {
   };
   const activity=new ActivityQueue(context,vscode);
   const store=new SiteStore(context);
+  const workspaces=new SiteWorkspaces(context,store);
   const io=new SiteIO(store,prepareConnections);disposeIO=()=>io.dispose();
-  let tree,explorer;
-  const changed=()=>{tree?.refresh();if(explorer)explorer.message=store.all().length?'':'Click + to add your first server.';};
+  let tree,explorer,managerPanel;
+  const managerTree=new ManagerTree(vscode,workspaces);
+  const managerView=vscode.window.createTreeView('sitedock.managerSites',{treeDataProvider:managerTree});
+  const refreshViews=()=>{tree?.refresh();managerTree.refresh();managerPanel?.update();};
+  const changed=()=>{refreshViews();void workspaces.sync().catch(err=>channel.appendLine('SiteDock workspace sync: '+errorMessage(err)));};
   const editor=createSiteEditor(vscode,context,store,io,changed);
   const doRemote=(siteId,op,...args)=>editor.perform(siteId,op,...args);
-  tree=new SiteTree(vscode,store,doRemote);
+  tree=new SiteTree(vscode,store,doRemote,workspaces);
   const filesystem=makeFilesystem(vscode,store,io,doRemote,activity);
   explorer=vscode.window.createTreeView('sitedock.sites',{treeDataProvider:tree,showCollapseAll:true});
   const activityTree=new ActivityTree(vscode,activity);
   const transfers=vscode.window.createTreeView('sitedock.activity',{treeDataProvider:activityTree});
   transfers.message='Recent transfers and remote edits. Click an item for details.';
-  explorer.message=store.all().length?'':'Click + to add your first server.';
+  const updateExplorerMessage=()=>{
+    const state=workspaces.snapshot;
+    explorer.message=!store.all().length?'No saved servers. Open Site Manager to add one.':
+      state.mode==='manager'&&!state.open.length?'No open sites. Choose a server in Site Manager.':
+      state.mode==='manager'&&state.scope==='active'?`Showing active site. ${state.open.length} open · Switch Site to change.`:'';
+    managerView.message=!store.all().length?'No saved sites yet. Use Site Manager to add your first server.':'';
+  };
+  updateExplorerMessage();
   const status=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,60);
   status.command='sitedock.refresh';
   const updateStatus=()=>{
@@ -65,6 +79,16 @@ async function activate(context) {
       status.show();
     }else status.hide();
   };
+  const workspaceStatus=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,61);
+  workspaceStatus.command='sitedock.switchSite';
+  const updateWorkspaceStatus=()=>{
+    const state=workspaces.snapshot;const current=store.get(state.active);
+    workspaceStatus.text=state.mode==='all'?'$(server) SiteDock: All Sites':`$(folder-active) ${current?.name||'SiteDock: No Active Site'}`;
+    workspaceStatus.tooltip=`SiteDock ${state.mode==='all'?'All Sites':'Site Manager'} · ${state.open.length} open · Click to switch`;
+    workspaceStatus.show();updateExplorerMessage();
+  };
+  context.subscriptions.push(workspaces.onChange(()=>{refreshViews();updateWorkspaceStatus();}),workspaceStatus);
+  updateWorkspaceStatus();
   const activityStatus=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,59);
   activityStatus.command='sitedock.showActivity';
   function updateActivityStatus(){
@@ -80,7 +104,51 @@ async function activate(context) {
   const command=(name,action)=>context.subscriptions.push(vscode.commands.registerCommand(name,async(...args)=>{
     try {await action(...args);}catch(err){vscode.window.showErrorMessage(`SiteDock: ${errorMessage(err)}`);}
   }));
-  const refresh=()=>tree.refresh();
+  const refresh=()=>{tree.refresh();managerTree.refresh();managerPanel?.update();};
+  function siteId(node){return typeof node==='string'?node:node?.id;}
+  async function getSelected(node){const id=siteId(node);return id?store.get(id):chooseSite();}
+  async function openSite(id){if(!store.get(id))throw new Error('Site no longer exists.');await workspaces.open(id);await vscode.commands.executeCommand('sitedock.sites.focus');}
+  async function openWindow(id){
+    const site=store.get(id);if(!site)throw new Error('Site no longer exists.');
+    const choice=await vscode.window.showInformationMessage(`Open “${site.name}” in a new VS Code window?`,{modal:true},'Open Workspace');
+    if(choice==='Open Workspace')await vscode.commands.executeCommand('vscode.openFolder',vscode.Uri.from({scheme:'sitedock',authority:site.id,path:'/'}),{forceNewWindow:true});
+  }
+  managerPanel=createManagerPanel(vscode,context,workspaces,store,{
+    add:()=>editor.open(),edit:id=>editor.open(id),open:openSite,focus:openSite,
+    close:id=>workspaces.close(id),favorite:id=>workspaces.favorite(id),
+    test:async id=>vscode.commands.executeCommand('sitedock.test',{id}),
+    window:openWindow,openMany:async ids=>{await workspaces.openMany(ids);await vscode.commands.executeCommand('sitedock.sites.focus');},
+    closeOthers:id=>workspaces.closeOthers(id),closeAll:()=>workspaces.closeAll(),
+    mode:value=>workspaces.setMode(value),scope:value=>workspaces.setScope(value)
+  });
+  command('sitedock.manager',()=>managerPanel.open());
+  command('sitedock.openSite',async node=>{const site=await getSelected(node);if(site)await openSite(site.id);});
+  command('sitedock.focusSite',async node=>{const site=await getSelected(node);if(site)await openSite(site.id);});
+  command('sitedock.closeSite',async node=>{const site=await getSelected(node);if(site)await workspaces.close(site.id);});
+  command('sitedock.closeOthers',async node=>{const site=await getSelected(node);if(site)await workspaces.closeOthers(site.id);});
+  command('sitedock.closeAllSites',()=>workspaces.closeAll());
+  command('sitedock.toggleFavorite',async node=>{const site=await getSelected(node);if(site)await workspaces.favorite(site.id);});
+  command('sitedock.openSiteWindow',async node=>{const site=await getSelected(node);if(site)await openWindow(site.id);});
+  command('sitedock.switchSite',async()=>{
+    const opened=workspaces.snapshot.open.map(id=>store.get(id)).filter(Boolean);
+    if(!opened.length){managerPanel.open();return;}
+    const choice=await vscode.window.showQuickPick(opened.map(s=>({label:s.name,description:`${s.protocol.toUpperCase()} · ${s.host}`,site:s})),{placeHolder:'Choose an open SiteDock site'});
+    if(choice)await openSite(choice.site.id);
+  });
+  command('sitedock.openMultiple',async()=>{
+    const sites=store.all();if(!sites.length){managerPanel.open();return;}
+    const selected=await vscode.window.showQuickPick(sites.map(s=>({label:s.name,description:`${s.protocol.toUpperCase()} · ${s.host}`,picked:workspaces.snapshot.open.includes(s.id),site:s})),{canPickMany:true,placeHolder:'Select sites to open together'});
+    if(selected?.length){await workspaces.openMany(selected.map(x=>x.site.id));await vscode.commands.executeCommand('sitedock.sites.focus');}
+  });
+  command('sitedock.setViewMode',async()=>{
+    const options=[
+      {label:'Site Manager · Active Site',description:'Focus on just one site, switch without closing others',mode:'manager',scope:'active'},
+      {label:'Site Manager · All Open Sites',description:'Only sites you have opened are shown',mode:'manager',scope:'open'},
+      {label:'All Sites',description:'Original explorer showing every saved server',mode:'all',scope:'active'}
+    ];
+    const choice=await vscode.window.showQuickPick(options,{placeHolder:'Choose how SiteDock displays your servers'});
+    if(choice){await workspaces.setScope(choice.scope);await workspaces.setMode(choice.mode);}
+  });
   command('sitedock.add',()=>editor.open());
   command('sitedock.showActivity',()=>vscode.commands.executeCommand('sitedock.activity.focus'));
   command('sitedock.clearActivity',()=>activity.clearCompleted());
@@ -102,6 +170,8 @@ async function activate(context) {
     channel.appendLine(`Extension path: ${context.extensionPath}`);
     channel.appendLine(`Transport directory: ${state.storage}`);
     channel.appendLine(`Transport ready: ${state.installed}`);
+    channel.appendLine(`Bundled libraries: ${state.bundled}`);
+    channel.appendLine(`Explorer: ${workspaces.snapshot.mode} / ${workspaces.snapshot.scope}; open: ${workspaces.snapshot.open.length}`);
     channel.appendLine(`Node: ${process.version} | Platform: ${process.platform}`);
     channel.show(true);
   });
@@ -148,7 +218,7 @@ async function activate(context) {
     const site=store.get(node?.id || (await chooseSite())?.id);if(!site)return;
     const answer=await vscode.window.showWarningMessage(`Remove ${site.name} from SiteDock?`,{modal:true,detail:'Only the saved connection and credentials are removed. Remote files are not affected.'},'Remove Server');
     if(answer!=='Remove Server')return;
-    await io.invalidate(site.id);await store.remove(site.id);refresh();updateStatus();
+    await io.invalidate(site.id);await store.remove(site.id);await workspaces.sync();refresh();updateStatus();
   });
   command('sitedock.open',async node=>{
     if(!node || node.kind!=='entry' || node.type==='directory')return;
@@ -162,11 +232,7 @@ async function activate(context) {
     if(!node || node.kind!=='entry' || node.type==='directory')return;
     await openInDesktopApp(vscode,uriFor(node),node.name || posix.basename(node.path));
   });
-  command('sitedock.openRoot',async node=>{
-    const site=store.get(node?.id || (await chooseSite())?.id);if(!site)return;
-    const choice=await vscode.window.showInformationMessage(`Open “${site.name}” as a VS Code workspace? This opens a new window.`,{modal:true},'Open Workspace');
-    if(choice==='Open Workspace')await vscode.commands.executeCommand('vscode.openFolder',vscode.Uri.from({scheme:'sitedock',authority:site.id,path:'/'}),{forceNewWindow:true});
-  });
+  command('sitedock.openRoot',async node=>{const site=await getSelected(node);if(site)await openWindow(site.id);});
   command('sitedock.newFile',async node=>{
     if(!node)return;
     const folder=parentUri(node); const name=await vscode.window.showInputBox({title:'New remote file',prompt:'File name',placeHolder:'index.html',validateInput:s=>{try{validName(s);return null;}catch(e){return e.message;}}});
@@ -337,7 +403,7 @@ async function activate(context) {
   });
   const saved=()=>{refresh();updateStatus();};
   context.subscriptions.push(vscode.workspace.registerFileSystemProvider('sitedock',filesystem,{isCaseSensitive:true}),
-    explorer,transfers,activity,tree,editor,filesystem,status,vscode.window.onDidChangeActiveTextEditor(updateStatus),
+    explorer,managerView,managerTree,managerPanel,workspaces,transfers,activity,tree,editor,filesystem,status,vscode.window.onDidChangeActiveTextEditor(updateStatus),
     vscode.workspace.onDidSaveTextDocument(doc=>{if(doc.uri.scheme==='sitedock')saved();}));
   updateStatus();
 }

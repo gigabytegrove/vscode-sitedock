@@ -4,7 +4,7 @@ param()
 
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
-$vsixPath = Join-Path $PSScriptRoot 'SiteDock-v0.1.9-GigabyteGrove-Official.vsix'
+$vsixPath = Join-Path $PSScriptRoot 'SiteDock-v0.2.0-GigabyteGrove-Official.vsix'
 $logPath = Join-Path $PSScriptRoot 'SiteDock-build.log'
 
 function Invoke-Checked {
@@ -45,7 +45,7 @@ function Test-OfficialPackage {
         $ns.AddNamespace('v', 'http://schemas.microsoft.com/developer/vsx-schema/2011')
         $id = $xml.SelectSingleNode('//v:Metadata/v:Identity', $ns)
         if (-not $id -or $id.GetAttribute('Publisher') -cne 'GigabyteGrove' -or
-            $id.GetAttribute('Id') -cne 'sitedock' -or $id.GetAttribute('Version') -ne '0.1.9') {
+            $id.GetAttribute('Id') -cne 'sitedock' -or $id.GetAttribute('Version') -ne '0.2.0') {
             throw 'Unexpected VSIX identity; upload aborted.'
         }
         $engine = $xml.SelectSingleNode('//v:Property[@Id="Microsoft.VisualStudio.Code.Engine"]', $ns)
