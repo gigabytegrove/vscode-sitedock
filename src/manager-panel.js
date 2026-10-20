@@ -6,16 +6,22 @@ const {randomBytes}=require('node:crypto');
 function createManagerPanel(vscode,context,workspaces,store,actions){
   let panel=null;
   const subscriptions=[];
-  const safeState=()=>({state:workspaces.snapshot,sites:workspaces.managerSites().map(s=>({
+  const safeState=()=>({state:workspaces.snapshot,updates:actions.updateStatus?.()||null,sites:workspaces.managerSites().map(s=>({
     id:s.id,name:s.name,host:s.host,port:s.port,protocol:s.protocol,root:s.root,
     isOpen:s.isOpen,isActive:s.isActive,isFavorite:s.isFavorite
   }))});
   function update(){if(panel)void panel.webview.postMessage({type:'state',...safeState()});}
   subscriptions.push(workspaces.onChange(update));
+  if(actions.onUpdateChange)subscriptions.push(actions.onUpdateChange(update));
   async function handle(message){
     if(!message||typeof message!=='object'||typeof message.type!=='string')return;
-    const commands=new Set(['open','focus','close','favorite','edit','test','window','openMany','closeOthers','mode','scope','add','closeAll']);
+    const commands=new Set(['open','focus','close','favorite','edit','test','window','openMany','closeOthers','mode','scope','add','closeAll',
+      'checkUpdate','installUpdate','updateSettings','viewReleases']);
     if(!commands.has(message.type))return;
+    if(['checkUpdate','installUpdate','updateSettings','viewReleases'].includes(message.type)){
+      if(typeof actions[message.type]!=='function')throw new Error('Update action unavailable.');
+      await actions[message.type]();return;
+    }
     if(message.type==='openMany'){
       if(!Array.isArray(message.ids)||message.ids.length>1000)throw new Error('Invalid multiple-site selection.');
       if(message.ids.some(x=>typeof x!=='string'||!store.get(x)))throw new Error('An included site no longer exists.');

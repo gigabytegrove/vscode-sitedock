@@ -7,7 +7,7 @@
 
 **A Dreamweaver-inspired site manager and live FTP, FTPS & SFTP editor for Visual Studio Code.**
 
-![Version](https://img.shields.io/badge/version-0.3.0-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+![Version](https://img.shields.io/badge/version-0.3.1-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **[Get started](#getting-started) · [Site Manager](#site-manager) · [GitHub updates](#github-only-updates) · [Features](#features) · [Troubleshooting](#troubleshooting) · [Build & release](GITHUB_RELEASES.md)**
 </div>
@@ -95,6 +95,10 @@ For other file types, choose **Open as Text** or **Open in Desktop App (Local Co
 
 ## GitHub-only updates
 
+**Find updates directly in the Site Manager.** Open **SiteDock → Site Manager** and look at the **SiteDock Updates** panel above the site list. It shows your installed version, release channel, release repository and current update status. Click **Check for Updates**, then **Install vX.Y.Z** if a newer release is available. **Release Notes** and **Settings** are beside it. The Site Manager sidebar also includes an update-check icon in its toolbar.
+
+The update panel reports errors such as an inaccessible/private GitHub release feed. It does not treat a failed check as an up-to-date result. It also never displays a false installation success: the install action first verifies the checksum and extension identity and then invokes VS Code's extension installer.
+
 SiteDock checks releases from the public GitHub repository configured in the **SiteDock Updates** settings. It does **not** use Microsoft Marketplace APIs or require a Marketplace publisher account.
 
 1. Open **SiteDock: Check for Updates** at any time. Automatic checks are enabled by default when VS Code starts and then periodically while it remains open.
@@ -173,7 +177,7 @@ npm run release:build
 npm run release:verify
 ```
 
-The verified official VSIX and its SHA-256 sidecar appear in `dist/`. The Windows equivalent is **`Build-GitHub-Release.cmd` or `Build-GitHub-Release.ps1`**; see [GITHUB_RELEASES.md](GITHUB_RELEASES.md) for release publication without GitHub Actions or the Visual Studio Marketplace.
+The verified official VSIX and its SHA-256 sidecar appear in `dist/`. The Windows equivalent is **`Build-GitHub-Release.ps1`**; see [GITHUB_RELEASES.md](GITHUB_RELEASES.md) for release publication without GitHub Actions or the Visual Studio Marketplace.
 
 **Testing scope:** Node.js tests cover the site manager, simulated remote operations, update filtering, checksum/ZIP verification, and mocked VS Code update installation. They **do not** constitute an end-to-end desktop VS Code/real-server test. Confirm those environments before calling a build production ready.
 

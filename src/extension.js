@@ -129,7 +129,12 @@ async function activate(context) {
     test:async id=>vscode.commands.executeCommand('sitedock.test',{id}),
     window:openWindow,openMany:async ids=>{await workspaces.openMany(ids);await vscode.commands.executeCommand('sitedock.sites.focus');},
     closeOthers:id=>workspaces.closeOthers(id),closeAll:()=>workspaces.closeAll(),
-    mode:value=>workspaces.setMode(value),scope:value=>workspaces.setScope(value)
+    mode:value=>workspaces.setMode(value),scope:value=>workspaces.setScope(value),
+    updateStatus:()=>updater.status(),onUpdateChange:listener=>updater.onStatusChange(listener),
+    checkUpdate:()=>updater.check({manual:true,prompt:false}),
+    installUpdate:()=>updater.installAvailable(),
+    updateSettings:()=>vscode.commands.executeCommand('workbench.action.openSettings','sitedock.updates'),
+    viewReleases:()=>vscode.commands.executeCommand('sitedock.viewReleases')
   });
   command('sitedock.manager',()=>managerPanel.open());
   command('sitedock.openSite',async node=>{const site=await getSelected(node);if(site)await openSite(site.id);});

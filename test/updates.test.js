@@ -170,3 +170,52 @@ test('automatic checks honor selected interval and do not repeat notifications i
     updater.dispose();
   }finally{await fs.rm(dir,{recursive:true,force:true});}
 });
+
+test('embedded Site Manager check reports actionable status without a duplicate VS Code popup',async()=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'sitedock-ui-check-'));
+  try{
+    const bytes=vsix(),hash=crypto.createHash('sha256').update(bytes).digest('hex');
+    const item=release('0.3.1');item.assets[0].digest='sha256:'+hash;
+    const client=mockClient(dir,{responses:['Later']});
+    const api={listReleases:async()=>[item],downloadFile:async(_url,file)=>fs.writeFile(file,bytes)};
+    const updater=updaterWith(api,client);
+    const statuses=[];const subscription=updater.onStatusChange(status=>statuses.push(status));
+    assert.equal(updater.status().phase,'idle');
+    await updater.check({manual:true,prompt:false});
+    assert.deepEqual(statuses.map(s=>s.phase),['checking','available']);
+    assert.equal(updater.status().latestVersion,'0.3.1');
+    assert.equal(client.events.some(e=>e[0]==='message'),false);
+    await updater.installAvailable();
+    assert.equal(updater.status().phase,'installed');
+    assert.equal(client.events.some(e=>e[1]==='workbench.extensions.installExtension'),true);
+    await assert.rejects(updater.installAvailable(),/No verified update/);
+    subscription.dispose();updater.dispose();
+  }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+
+test('private release feed reports an error status, not falsely up-to-date',async()=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'sitedock-ui-error-'));
+  try{
+    const client=mockClient(dir);
+    const updater=updaterWith({listReleases:async()=>{throw new Error('GitHub returned HTTP 404 (repository unavailable or private)');}},client);
+    await assert.rejects(updater.check({manual:true,prompt:false}),/404/);
+    assert.equal(updater.status().phase,'error');
+    assert.match(updater.status().error,/404/);
+    await assert.rejects(updater.installAvailable(),/No verified update/);
+    updater.dispose();
+  }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
+
+test('update settings change clears stale install choices and publishes idle state',async()=>{
+  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'sitedock-ui-settings-'));
+  try{
+    const client=mockClient(dir);
+    const updater=updaterWith({listReleases:async()=>[release('0.3.1')]},client);
+    await updater.check({manual:true,prompt:false});
+    assert.equal(updater.status().phase,'available');
+    client.callbacks[0]({affectsConfiguration:key=>key==='sitedock.updates'});
+    assert.equal(updater.status().phase,'idle');
+    await assert.rejects(updater.installAvailable(),/No verified update/);
+    updater.dispose();
+  }finally{await fs.rm(dir,{recursive:true,force:true});}
+});
