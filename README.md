@@ -13,7 +13,7 @@
 </div>
 
 > [!IMPORTANT]
-> **GitHub-only distribution.** SiteDock does not require the Visual Studio Marketplace. Install the first official VSIX manually; subsequent GitHub Releases can be checked and installed from inside VS Code. **The source repository is public:** official VSIX files and checksums are published directly under [gigabytegrove/vscode-sitedock/releases](https://github.com/gigabytegrove/vscode-sitedock/releases). No second repository is required. SiteDock v0.4.0 is the currently published and user-tested baseline.
+> **GitHub-only distribution.** SiteDock does not require the Visual Studio Marketplace. Install the first official VSIX manually; subsequent GitHub Releases can be checked and installed from inside VS Code. **The source repository is public:** official VSIX files and checksums are published directly under [gigabytegrove/vscode-sitedock/releases](https://github.com/gigabytegrove/vscode-sitedock/releases). No second repository is required. SiteDock v0.4.0 is available as the current published, tested baseline.
 
 ## Why SiteDock?
 
@@ -49,14 +49,18 @@ Right-click a remote file and select **Compare with Local File** to open VS Code
 
 For ordinary SFTP files and folders, choose **Change SFTP File Permissions** to inspect current Unix permissions and set an octal value (for example, `644` or `755`). Changes require confirmation; FTP and FTPS are not supported for this command.
 
-### SiteDock v0.5.0 published; v0.6.0 development
+### SiteDock v0.5.0 development features (not yet published)
 
-- **Site groups:** label connections by client or environment directly in Site Manager, filter by group, and keep grouping across VS Code restarts without changing credentials.
-- **Site sorting:** choose smart (open/favorites first), site name, or hostname.
-- **Duplicate Site:** create an independent connection with no copied password, private key path, trusted SSH fingerprint, or permission to follow links outside the site root. Configure credentials before connecting.
-- **Find Remote Files:** bounded, cancellable filename search through existing connections. The search does not inspect file contents or traverse symbolic links; select a result to open it or reveal its directory.
+- **Site groups:** group connections by environment/client directly in Site Manager, filter by group, and keep the grouping across VS Code restarts without altering server credentials.
+- **Site sorting:** switch between smart (open/favorites first), alphabetical name, or hostname order.
+- **Duplicate Site:** create an independent connection without copying credentials, private-key paths, trusted SSH fingerprints, or external-link permissions. Configure credentials in the editor before connecting.
+- **Find Remote Files:** bounded, cancellable filename search in Site Manager and the server explorer. Does not read file contents or traverse symlinks; folder selection reveals the directory in the explorer.
 
-**v0.5.0 was published** from the site grouping, duplication and filename-search baseline. **v0.6.0 remains development source**, with batch management and staged SFTP uploading pending desktop/real-server acceptance.
+**Multi-item remote file management (v0.5 development):** In **My Servers**, use Ctrl/Shift to select multiple files or folders. Use **Move Selected Remote Items** or **Delete Selected Remote Items** in the view toolbar or selection context menu. Moves stay within one site, require an existing ordinary destination folder and never replace an existing name. Deletion is permanent and requires confirmation; selecting a parent and child together deletes the parent only once. Both operations appear in **Transfers & Activity**. This is not drag-and-drop or remote file copy; those remain on the roadmap.
+
+**Safer SFTP uploads (v0.5 development):** SFTP editing and queued uploads use same-directory staging, byte-count verification, and a previous-version backup with rollback where possible. Existing Unix permissions are preserved. On servers without an atomic replace extension there can still be a brief gap during rename; network/power failure can leave a `.sitedock-*.backup` for recovery. This must be tested against a real SFTP server before release. FTP/FTPS still use direct writes.
+
+**v0.5.0 is a development source update.** These additions require official packaging, desktop UI acceptance, and live-server checks before GitHub release. v0.4.0 remains the latest established release.
 
 ## Features
 
@@ -91,7 +95,7 @@ The **officially packaged** extension includes its FTP/SFTP transport dependenci
 
 ### Install SiteDock
 
-1. Obtain the latest *verified official* `sitedock-vX.Y.Z.vsix` from the [GitHub Releases page](https://github.com/gigabytegrove/vscode-sitedock/releases) (v0.4.0 is available). Until then, use [Build from source](#build-from-source).
+1. Obtain the latest *verified official* `sitedock-vX.Y.Z.vsix` from the [GitHub Releases page](https://github.com/gigabytegrove/vscode-sitedock/releases) (v0.4.0 available). Until then, use [Build from source](#build-from-source).
 2. In VS Code run **Extensions: Install from VSIX...** (Command Palette: `Ctrl+Shift+P` / `Cmd+Shift+P`).
 3. Select the `.vsix` file and **Reload Window** if requested.
 4. Open the SiteDock Activity Bar view and launch **Site Manager**.
@@ -221,7 +225,7 @@ Every significant feature must pass the [product acceptance and release gates](Q
 
 ## Release readiness
 
-**v0.4.0 is an official GitHub Release** packaged with `@vscode/vsce`, checksum-verified, and user-tested for the in-app upgrade, FTP/FTPS/SFTP connectivity, live editing, conflict handling, and downloads. v0.5.0 additions remain unshipped development work requiring desktop, server and release verification. See [release acceptance gates](QUALITY_GATES.md), [release notes](RELEASE_NOTES.md), and [GitHub publishing](GITHUB_RELEASES.md). Do not distribute manually assembled development VSIX files as a final release.
+**v0.4.0 is an official GitHub Release**, packaged with `@vscode/vsce`, checksum-verified, and user-tested for the in-app upgrade, FTP/FTPS/SFTP connections, live editing, conflict handling, and downloads. The v0.5.0 enhancements described above remain unshipped source work; their desktop, live-server, and packaging acceptance is still outstanding. See [release acceptance gates](QUALITY_GATES.md), [release notes](RELEASE_NOTES.md), and [GitHub publishing](GITHUB_RELEASES.md). Do not distribute manually assembled development VSIX files as a final release.
 
 ## License and contributions
 
@@ -233,9 +237,8 @@ MIT licensed; third-party FTP/SFTP libraries retain their own license terms. Rep
 
 </div>
 
-## v0.6.0 — Extended file operations (development, not released)
+## v0.6.0 development: remote clipboard and batch downloads
 
-- My Servers explorer supports native Ctrl/Shift multi-selection and visible **Move Selected Remote Items** / **Delete Selected Remote Items** toolbar and context-menu actions. Operations are bounded to one site and at most 100 selected entries; moves refuse collisions, missing destinations, and folder-descendant moves. Recursive deletion requires confirmation, and all actions are journaled in Transfers & Activity.
-- SFTP live saves and queued file/folder uploads now stage under randomized sibling filenames, check uploaded byte counts, retain Unix file permissions when replacing an existing file, detect metadata changes and attempt rollback after a failed rename. FTP/FTPS still use their prior upload behavior.
-- **Important:** On SFTP servers without atomic rename-over-existing support, replacing an existing file can have a brief absence window between moving the old version to backup and moving in the staged file. Interrupted operations can leave a `.sitedock-*.backup` requiring manual recovery. Do not call this universally atomic until real-server acceptance.
-- Source tests run locally, but this pass is not packaged or published. Test multi-select moves/deletes, site-link safety, staged-rename failure, and recovery against a controlled real server before v0.5.0 release.
+Use Ctrl/Shift in **My Servers** to select ordinary remote files and folders. **Copy Remote Items** holds their paths in SiteDock memory only; **Paste Remote Items** on an ordinary folder or site root copies them within the same remote site without replacing existing files. Selected folders are recursively traversed with a 3,000-entry and 32-level bound; symbolic and external links are not followed. Copies stream through an isolated temporary local file, which is removed when each operation completes or fails. Failed jobs are visible in **Transfers & Activity**.
+
+**Download Selected Remote Items** prompts once for a local destination and a Skip or Replace policy; it preflights all selected items before queueing, caps the combined transfer plan, and preserves their folder structures. Copies and downloads are queued sequentially. These features require live VS Code and server acceptance testing before v0.6.0 is published.

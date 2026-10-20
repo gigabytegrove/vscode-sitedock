@@ -20,6 +20,9 @@ const {createUpdater}=require('./updates');
 const {exportProfiles,previewImport,MAX_BYTES}=require('./site-profiles');
 const {searchRemoteFiles}=require('./search-remote');
 const {itemsForAction,planBatch,withoutNested,movePlan}=require('./batch-operations');
+const {snapshotItems,planRemoteCopy,copyRemoteFile,planBatchDownload}=require('./remote-clipboard');
+const {dropSources,planDroppedUploads}=require('./drop-uploads');
+const {retryDownload}=require('./transfer-retry');
 
 let disposeIO;
 function uriFor(node) {return vscode.Uri.from({scheme:'sitedock',authority:node.id,path:node.kind==='site'?'/':node.path});}
@@ -60,7 +63,66 @@ async function activate(context) {
   const doRemote=(siteId,op,...args)=>editor.perform(siteId,op,...args);
   tree=new SiteTree(vscode,store,doRemote,workspaces);
   const filesystem=makeFilesystem(vscode,store,io,doRemote,activity);
-  explorer=vscode.window.createTreeView('sitedock.sites',{treeDataProvider:tree,showCollapseAll:true,canSelectMany:true});
+  const dragAndDropController={
+    // VS Code Explorer supplies URI lists; operating-system drags may supply
+    // the special 'files' MIME with DataTransferFile objects.
+    dragMimeTypes:[],dropMimeTypes:['text/uri-list','files'],
+    async handleDrop(target,transfer,token){
+      try{
+        if(token?.isCancellationRequested)return;
+        if(!target||!['site','entry'].includes(target.kind)||
+           (target.kind==='entry'&&(target.type!=='directory'||target.symlink||target.external||target.broken||target.unresolved)))
+          throw new Error('Drop files on an ordinary SiteDock site or folder, not on a file, link, or blank space.');
+        const site=store.get(target.id);
+        if(!site)throw new Error('The destination SiteDock connection no longer exists.');
+        const folder=target.kind==='site'?'/':target.path;
+        const sources=await dropSources(vscode,transfer,token);
+        if(token?.isCancellationRequested||!sources.length)return;
+        const plan=await planDroppedUploads(vscode,site,folder,sources);
+        if(token?.isCancellationRequested)return;
+        const destination=await doRemote(site.id,'stat',remotePath(site,folder));
+        if(!destination||destination.type!=='directory'||destination.symlink)throw new Error('Drop destination is not an ordinary remote folder.');
+        const policy=await vscode.window.showWarningMessage(`Upload ${sources.length} dropped item(s) to ${site.name}?`,
+          {modal:true,detail:`Destination: ${folder}. ${plan.length} file/folder operations. Existing files can be skipped or replaced; local symlinks are not followed.`},'Replace Existing Files','Skip Existing Files');
+        if(!policy||token?.isCancellationRequested)return;
+        const replace=policy==='Replace Existing Files';
+        activity.batch(()=>{for(const item of plan){
+          if(item.kind==='mkdir'){
+            activity.enqueue({kind:'mkdir',label:`Dropped folder ${item.remote}`,siteName:site.name},async(_report,signal)=>{
+              if(signal.aborted)return;
+              const dest=remotePath(site,item.remote),existing=await doRemote(site.id,'stat',dest);
+              if(existing){if(existing.type!=='directory'||existing.symlink)throw new Error('Remote folder collides with an existing item.');return;}
+              await doRemote(site.id,'mkdir',dest);refresh();
+            });continue;
+          }
+          activity.enqueue({kind:'upload',label:`Dropped file ${item.remote}`,siteName:site.name},async(report,signal)=>{
+            if(signal.aborted)return;
+            const dest=remotePath(site,item.remote);
+            const old=await doRemote(site.id,'stat',dest);
+            if(old&&old.type==='directory')throw new Error('Remote folder exists where the file would be uploaded.');
+            if(old&&!replace)return {skipped:true,reason:'Existing remote file skipped'};
+            if(signal.aborted)return;
+            if(item.bytes){
+              report(0,item.bytes.byteLength,'Uploading dropped file');
+              await doRemote(site.id,site.protocol==='sftp'?'writeStaged':'write',dest,item.bytes);
+              report(item.bytes.byteLength,item.bytes.byteLength,'Uploaded');
+            }else if(item.local?.scheme==='file'&&item.local?.fsPath){
+              await doRemote(site.id,site.protocol==='sftp'?'uploadLocalStaged':'uploadLocal',item.local.fsPath,dest,report);
+            }else{
+              const bytes=await vscode.workspace.fs.readFile(item.local);
+              if(signal.aborted)return;
+              await doRemote(site.id,site.protocol==='sftp'?'writeStaged':'write',dest,bytes);
+              report(bytes.byteLength,bytes.byteLength,'Uploaded');
+            }
+            filesystem.notifyModified(vscode.Uri.from({scheme:'sitedock',authority:site.id,path:item.remote}),!old);
+            refresh();
+          });
+        }});
+        void vscode.window.showInformationMessage(`${plan.length} dropped file/folder operations queued in Transfers & Activity.`);
+      }catch(err){void vscode.window.showErrorMessage(`SiteDock drop: ${errorMessage(err)}`);}
+    }
+  };
+  explorer=vscode.window.createTreeView('sitedock.sites',{treeDataProvider:tree,showCollapseAll:true,canSelectMany:true,dragAndDropController});
   const activityTree=new ActivityTree(vscode,activity);
   const transfers=vscode.window.createTreeView('sitedock.activity',{treeDataProvider:activityTree});
   transfers.message='Recent transfers and remote edits. Click an item for details.';
@@ -68,7 +130,7 @@ async function activate(context) {
     const state=workspaces.snapshot;
     explorer.message=!store.all().length?'No saved servers. Open Site Manager to add one.':
       state.mode==='manager'&&!state.open.length?'No open sites. Choose a server in Site Manager.':
-      state.mode==='manager'&&state.scope==='active'?`Showing active site. ${state.open.length} open · Switch Site to change.`:'';
+      state.mode==='manager'&&state.scope==='active'?`Showing active site. ${state.open.length} open · Switch Site to change.`:'Drop local files onto a remote folder to upload. Ctrl/Shift selects multiple remote files.';
     managerView.message=!store.all().length?'No saved sites yet. Use Site Manager to add your first server.':'';
   };
   updateExplorerMessage();
@@ -174,7 +236,6 @@ async function activate(context) {
     await workspaces.sync();refreshViews();
     await vscode.window.showInformationMessage(`Imported ${plan.imports.length} site(s). Configure credentials using Edit Server before connecting.`);
   });
-
   command('sitedock.groupSite',async node=>{
     const site=await getSelected(node);if(!site)return;
     const existing=workspaces.snapshot.groups[site.id]||'';
@@ -195,7 +256,8 @@ async function activate(context) {
     await vscode.window.showInformationMessage(`Created ${copy.name}. Set its credentials in the server editor.`);
   });
   command('sitedock.setSiteSort',async()=>{
-    const choices=[{label:'Smart (open and favorites first)',value:'smart'},{label:'Site name',value:'name'},{label:'Hostname',value:'host'}];
+    const choices=[{label:'Smart (open and favorites first)',value:'smart'},
+      {label:'Site name',value:'name'},{label:'Hostname',value:'host'}];
     const choice=await vscode.window.showQuickPick(choices,{placeHolder:'Sort sites in Site Manager'});
     if(choice)await workspaces.setSort(choice.value);
   });
@@ -216,6 +278,7 @@ async function activate(context) {
     if(selected.match.type==='file')await openRemoteFile(vscode,vscode.Uri.from({scheme:'sitedock',authority:site.id,path:selected.match.path}),selected.match.name);
     else {
       await openSite(site.id);
+      // Reveal the folder through VS Code's tree parent lookup; no filesystem changes.
       await explorer.reveal({kind:'entry',id:site.id,path:selected.match.path,name:selected.match.name,type:'directory'}, {select:true,focus:true,expand:true});
     }
   });
@@ -388,8 +451,87 @@ async function activate(context) {
     if(response!=='Delete')return;
     await vscode.workspace.fs.delete(uriFor(node),{recursive:isDir,useTrash:false});refresh();
   });
-  // Native VS Code multi-selection: clicking an unselected item acts only on it.
+  // Context-menu actions use native VS Code multi-selection. Clicking an
+  // unselected item acts only on that item, not on stale selections elsewhere.
   const chosenBatch=node=>planBatch(itemsForAction(node,explorer.selection),store);
+  // Clipboard stays inside SiteDock: no credentials or remote paths are put on the OS clipboard.
+  let remoteClipboard=null;
+  command('sitedock.copyRemote',async node=>{
+    const selected=snapshotItems(chosenBatch(node));
+    remoteClipboard=selected;
+    const site=store.get(selected.siteId);
+    vscode.window.showInformationMessage(`${selected.items.length} item(s) copied from ${site.name}. Select a destination folder and choose Paste Remote Items.`);
+  });
+  command('sitedock.pasteRemote',async node=>{
+    if(!remoteClipboard)throw new Error('Copy remote files or folders first.');
+    if(!node||!['site','entry'].includes(node.kind)||(node.kind==='entry'&&node.type!=='directory'))throw new Error('Select a destination folder or site root.');
+    const site=store.get(node.id);
+    if(!site||remoteClipboard.siteId!==site.id)throw new Error('Copy and paste cannot cross different remote sites.');
+    if(node.kind==='entry'&&(node.symlink||node.external||node.broken||node.unresolved))throw new Error('Cannot paste into a symbolic or external folder.');
+    const folder=node.kind==='site'?'/':node.path;
+    const remoteFolder=remotePath(site,folder);
+    const dir=await doRemote(site.id,'stat',remoteFolder);
+    if(!dir||dir.type!=='directory'||dir.symlink)throw new Error('Paste destination must be an existing ordinary folder.');
+    const entries=await planRemoteCopy({snapshot:remoteClipboard,site,folder,
+      stat:virtual=>doRemote(site.id,'stat',remotePath(site,virtual)),
+      list:virtual=>doRemote(site.id,'list',remotePath(site,virtual))});
+    const decision=await vscode.window.showWarningMessage(`Copy ${entries.filter(x=>x.kind==='copy').length} remote file(s) into ${site.name}?`,
+      {modal:true,detail:`Destination ${folder}. ${entries.length} file/folder operations; symbolic links are excluded. Existing files will not be overwritten.`},'Copy Remote Items');
+    if(decision!=='Copy Remote Items')return;
+    activity.batch(()=>{for(const entry of entries){
+      if(entry.kind==='mkdir'){
+        activity.enqueue({kind:'mkdir',siteName:site.name,label:`Copy folder ${entry.remote}`},async()=>{
+          const target=remotePath(site,entry.remote);
+          if(await doRemote(site.id,'stat',target))throw new Error('Destination appeared after preflight; copy stopped: '+entry.remote);
+          await doRemote(site.id,'mkdir',target);refresh();
+        });continue;
+      }
+      activity.enqueue({kind:'copy',siteName:site.name,label:`Copy ${entry.source} → ${entry.remote}`},async(report,signal)=>{
+        const target=remotePath(site,entry.remote);
+        const original=await doRemote(site.id,'stat',remotePath(site,entry.source));
+        if(!original||original.type!=='file'||original.symlink)throw new Error('Source changed or is now a symbolic link: '+entry.source);
+        if(await doRemote(site.id,'stat',target))throw new Error('Destination appeared after preflight; refusing overwrite: '+entry.remote);
+        await copyRemoteFile({source:entry.source,target:entry.remote,signal,report,
+          download:(source,tmp,progress)=>doRemote(site.id,'downloadLocal',remotePath(site,source),tmp,progress),
+          upload:(tmp,dest,progress)=>doRemote(site.id,site.protocol==='sftp'?'uploadLocalStaged':'uploadLocal',tmp,remotePath(site,dest),progress)});
+        filesystem.notifyModified(vscode.Uri.from({scheme:'sitedock',authority:site.id,path:entry.remote}),true);refresh();
+      });
+    }});
+    vscode.window.showInformationMessage(`${entries.length} remote copy operations queued in Transfers & Activity.`);
+  });
+  command('sitedock.downloadSelected',async node=>{
+    const batch=snapshotItems(chosenBatch(node));
+    const site=store.get(batch.siteId);
+    const picked=await vscode.window.showOpenDialog({canSelectFiles:false,canSelectFolders:true,canSelectMany:false,title:`Download ${batch.items.length} item(s) from ${site.name}`});
+    if(!picked?.length)return;
+    const root=picked[0];
+    const plan=await planBatchDownload({vscode,batch,site,localRoot:root,
+      list:address=>doRemote(site.id,'list',address)});
+    const choice=await vscode.window.showWarningMessage(`Download ${plan.filter(x=>x.kind==='download').length} files from ${site.name}?`,
+      {modal:true,detail:`To ${root.fsPath||root.path}. Existing files can be skipped or replaced. Remote symlink folders are not traversed.`},'Replace Existing Files','Skip Existing Files');
+    if(!choice)return;
+    const replace=choice==='Replace Existing Files';
+    activity.batch(()=>{for(const entry of plan){
+      if(entry.kind==='mkdir'){
+        activity.enqueue({kind:'mkdir',siteName:site.name,label:`Create local folder ${entry.local.path}`},async()=>{
+          let existing;
+          try{existing=await vscode.workspace.fs.stat(entry.local);}catch(err){if(err.code!=='FileNotFound'&&err.code!=='ENOENT')throw err;}
+          if(existing){if(!(existing.type&vscode.FileType.Directory))throw new Error('A local file prevents creating folder '+entry.local.path);return;}
+          await vscode.workspace.fs.createDirectory(entry.local);
+        });continue;
+      }
+      activity.enqueue({kind:'download',siteName:site.name,label:`Download ${entry.remote}`},async(report,signal)=>{
+        if(signal.aborted)return;
+        try{const st=await vscode.workspace.fs.stat(entry.local);if(st){if(st.type&vscode.FileType.Directory)throw new Error('Local destination is a folder');if(!replace)return {skipped:true,reason:'Existing file skipped'};}}
+        catch(err){if(err.code!=='FileNotFound'&&err.code!=='ENOENT')throw err;}
+        if(entry.local.scheme==='file'&&entry.local.fsPath)
+          await retryDownload(()=>doRemote(site.id,'downloadLocal',remotePath(site,entry.remote),entry.local.fsPath,report),{signal,report});
+        else{const bytes=await retryDownload(()=>doRemote(site.id,'read',remotePath(site,entry.remote)),{signal,report});if(signal.aborted)return;
+          report(0,bytes.length,'Writing download');await vscode.workspace.fs.writeFile(entry.local,bytes);report(bytes.length,bytes.length,'Downloaded');}
+      });
+    }});
+    vscode.window.showInformationMessage(`${plan.length} download operations queued in Transfers & Activity.`);
+  });
   command('sitedock.batchDelete',async node=>{
     const batch=chosenBatch(node),site=store.get(batch.siteId);
     const selected=withoutNested(batch.items);
@@ -417,6 +559,7 @@ async function activate(context) {
     const moves=movePlan(batch,destination,site);
     const folder=await doRemote(site.id,'stat',remotePath(site,posix.normalize(destination)));
     if(!folder||folder.type!=='directory'||folder.symlink)throw new Error('The destination must be an existing ordinary folder.');
+    // Preflight every destination before queuing any modifications.
     for(const {destination:target} of moves){
       if(await doRemote(site.id,'stat',remotePath(site,target)))throw new Error(`Destination already exists: ${target}. No items were moved.`);
     }
@@ -486,9 +629,9 @@ async function activate(context) {
       if(signal.aborted)return;
       report(0,0,'Downloading remote file');
       if(dest.scheme==='file'&&dest.fsPath){
-        await doRemote(site.id,'downloadLocal',remotePath(site,node.path),dest.fsPath,report);
+        await retryDownload(()=>doRemote(site.id,'downloadLocal',remotePath(site,node.path),dest.fsPath,report),{signal,report});
       }else{
-        const bytes=await doRemote(site.id,'read',remotePath(site,node.path));
+        const bytes=await retryDownload(()=>doRemote(site.id,'read',remotePath(site,node.path)),{signal,report});
         if(signal.aborted)return;
         report(0,bytes.length,'Saving downloaded file');
         await vscode.workspace.fs.writeFile(dest,bytes);
@@ -560,7 +703,7 @@ async function activate(context) {
         try{await vscode.workspace.fs.stat(entry.local);if(!replace)return {skipped:true,reason:'Existing local file skipped'};}
         catch(err){if(err.code!=='FileNotFound'&&err.code!=='ENOENT')throw err;}
         if(entry.local.scheme==='file' && entry.local.fsPath)
-          await doRemote(site.id,'downloadLocal',remotePath(site,entry.remote),entry.local.fsPath,report);
+          await retryDownload(()=>doRemote(site.id,'downloadLocal',remotePath(site,entry.remote),entry.local.fsPath,report),{signal,report});
         else{
           const bytes=await doRemote(site.id,'read',remotePath(site,entry.remote));
           if(signal.aborted)return;
