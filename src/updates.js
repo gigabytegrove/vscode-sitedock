@@ -5,7 +5,7 @@ const {chooseRelease,parseChecksum}=require('./update-utils');
 const network=require('./update-network');
 const {sha256,validateVSIX}=require('./update-vsix');
 
-const DEFAULT_REPOSITORY='gigabytegrove/vscode-sitedock';
+const DEFAULT_REPOSITORY='gigabytegrove/sitedock-releases';
 const CHECK_INTERVAL_MINUTES=60;
 
 /** No server, agent, service or background process: timers only run in the VS Code extension host. */

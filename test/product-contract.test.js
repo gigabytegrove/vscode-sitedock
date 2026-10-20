@@ -101,3 +101,11 @@ test('site profile and local diff functions are discoverable and wired into norm
   assert.match(extension,/getPermissions/);
   assert.match(extension,/setPermissions/);
 });
+
+test('private source cannot accidentally be configured as the default public update feed',()=>{
+  const expected='gigabytegrove/sitedock-releases';
+  assert.equal(manifest.contributes.configuration.properties['sitedock.updates.repository'].default,expected);
+  for(const location of ['src/updates.js','src/update-utils.js','src/extension.js','scripts/publish-release.js','Build-GitHub-Release.ps1']){
+    assert.ok(file(location).includes(expected),`wrong public release feed in ${location}`);
+  }
+});

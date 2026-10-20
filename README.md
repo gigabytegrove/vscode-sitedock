@@ -82,7 +82,7 @@ The **officially packaged** extension includes its FTP/SFTP transport dependenci
 
 ### Install SiteDock
 
-1. Obtain the latest *verified official* `sitedock-vX.Y.Z.vsix` from the [GitHub Releases page](https://github.com/gigabytegrove/vscode-sitedock/releases) **once the project has a public release feed**. Until then, use [Build from source](#build-from-source).
+1. Obtain the latest *verified official* `sitedock-vX.Y.Z.vsix` from the [GitHub Releases page](https://github.com/gigabytegrove/sitedock-releases/releases) **once the project has a public release feed**. Until then, use [Build from source](#build-from-source).
 2. In VS Code run **Extensions: Install from VSIX...** (Command Palette: `Ctrl+Shift+P` / `Cmd+Shift+P`).
 3. Select the `.vsix` file and **Reload Window** if requested.
 4. Open the SiteDock Activity Bar view and launch **Site Manager**.
@@ -121,7 +121,7 @@ SiteDock checks releases from the public GitHub repository configured in the **S
 | --- | --- | --- |
 | `sitedock.updates.enabled` | `true` | Automatic update checks |
 | `sitedock.updates.channel` | `stable` | `stable` or `beta` (beta also allows stable releases) |
-| `sitedock.updates.repository` | `gigabytegrove/vscode-sitedock` | Public GitHub Releases repository (`owner/repo`) |
+| `sitedock.updates.repository` | `gigabytegrove/sitedock-releases` | Public GitHub Releases repository (`owner/repo`) |
 | `sitedock.updates.checkIntervalHours` | `12` | Check interval, clamped to 1–168 hours |
 | `sitedock.updates.autoInstall` | `false` | Automatically install a verified update |
 

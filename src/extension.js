@@ -111,7 +111,7 @@ async function activate(context) {
   command('sitedock.checkUpdates',()=>updater.check({manual:true}));
   command('sitedock.updateSettings',()=>vscode.commands.executeCommand('workbench.action.openSettings','sitedock.updates'));
   command('sitedock.viewReleases',()=>{
-    const repository=vscode.workspace.getConfiguration('sitedock.updates').get('repository','gigabytegrove/vscode-sitedock');
+    const repository=vscode.workspace.getConfiguration('sitedock.updates').get('repository','gigabytegrove/sitedock-releases');
     const {releaseRepository}=require('./update-utils');
     return vscode.env.openExternal(vscode.Uri.parse(`https://github.com/${releaseRepository(repository)}/releases`));
   });
