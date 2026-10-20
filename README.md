@@ -7,7 +7,7 @@
 
 **A Dreamweaver-inspired site manager and live FTP, FTPS & SFTP editor for Visual Studio Code.**
 
-![Version](https://img.shields.io/badge/version-0.3.1-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+![Version](https://img.shields.io/badge/version-0.4.0-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **[Quality and release gates](QUALITY_GATES.md)** · **[Get started](#getting-started) · [Site Manager](#site-manager) · [GitHub updates](#github-only-updates) · [Features](#features) · [Troubleshooting](#troubleshooting) · [Build & release](GITHUB_RELEASES.md)**
 </div>
@@ -40,6 +40,14 @@ Open **SiteDock → Site Manager** or run **SiteDock: Open Site Manager** from t
 You can **open several sites concurrently**, change the active site using the status bar or **SiteDock: Switch Site**, and open a site in a separate VS Code window. Closing a site in Site Manager **does not delete it**, close its open editor tabs, or erase its credentials.
 
 The Site Manager stores its layout, open-site selection and favorites between sessions.
+
+### Backup and compare
+
+Site Manager has **Export Sites** and **Import Sites** buttons. Exports contain connection details only—**no passwords, key files, passphrases or trusted SSH fingerprints**. An import skips matching saved sites, creates new IDs, and requires you to configure credentials and verify the SSH host again. Do not publish profile exports: hostnames, usernames and paths remain sensitive operational information.
+
+Right-click a remote file and select **Compare with Local File** to open VS Code's side-by-side diff editor. Comparison does not upload or modify either file; edit and save explicitly when ready.
+
+For ordinary SFTP files and folders, choose **Change SFTP File Permissions** to inspect current Unix permissions and set an octal value (for example, `644` or `755`). Changes require confirmation; FTP and FTPS are not supported for this command.
 
 ## Features
 
@@ -141,7 +149,7 @@ The selected repository may be private, missing or contain no public GitHub Rele
 
 <details><summary><b>The release exists but SiteDock finds no update</b></summary>
 
-The GitHub release must be published (not a draft), have a valid semantic version tag such as `v0.3.1`, and contain **exactly one** uploaded `sitedock-*.vsix` asset with a GitHub SHA-256 digest **or** its matching `.vsix.sha256` file. Stable ignores pre-releases. Use **Check for Updates** to bypass the automatic-check interval.
+The GitHub release must be published (not a draft), have a valid semantic version tag such as `v0.4.0`, and contain **exactly one** uploaded `sitedock-*.vsix` asset with a GitHub SHA-256 digest **or** its matching `.vsix.sha256` file. Stable ignores pre-releases. Use **Check for Updates** to bypass the automatic-check interval.
 </details>
 
 <details><summary><b>Update verification fails</b></summary>
@@ -201,6 +209,10 @@ test/             Automated Node.js tests
 ## Release quality and verification
 
 Every significant feature must pass the [product acceptance and release gates](QUALITY_GATES.md). Passing unit tests alone does not establish a working VS Code user experience or a published, installable release.
+
+## Release readiness
+
+**The repository is not yet a downloadable public GitHub Release.** SiteDock v0.4.0 has automated tests and a browser-rendered mock of Site Manager interactions, but an official `vsce` package, end-to-end desktop testing, a publicly accessible release feed, and live FTP/SFTP verification are outstanding. See [release acceptance gates](QUALITY_GATES.md), [release notes](RELEASE_NOTES.md), and [GitHub publishing](GITHUB_RELEASES.md). Do not distribute manually assembled development VSIX files as a final release.
 
 ## License and contributions
 

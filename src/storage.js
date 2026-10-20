@@ -55,6 +55,22 @@ class SiteStore {
     await this.context.globalState.update(KEY,[...others,site]);
     return site;
   }
+  async importProfiles(profiles) {
+    if(!Array.isArray(profiles)||profiles.length>500)throw new Error('Invalid imported SiteDock profiles.');
+    const existing=this.all();
+    const used=new Set(existing.map(s=>s.id));
+    const normalized=[];
+    for(const site of profiles){
+      if(!site||typeof site!=='object'||!site.id||used.has(site.id))throw new Error('Invalid or duplicated imported site ID.');
+      used.add(site.id);
+      // Revalidate all entries before writing anything to persistent storage.
+      const cleaned=validateSite(site,site.id);
+      if(cleaned.followExternalLinks||cleaned.fingerprint)throw new Error('Imported sites cannot implicitly trust an SSH host or external symlink.');
+      normalized.push(cleaned);
+    }
+    await this.context.globalState.update(KEY,[...existing,...normalized]);
+    return profiles.length;
+  }
   async trustKey(id, fingerprint) {
     if (!/^[0-9a-f]{64}$/.test(fingerprint)) throw new Error('Invalid host fingerprint.');
     const site=this.get(id);

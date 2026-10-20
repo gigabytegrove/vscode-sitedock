@@ -156,7 +156,7 @@ async function requireContained(session,site,method,args) {
   if (method==='stat'||method==='realpath') return;
   let paths=[];
   const parentOnly=['unlink','mkdir'];
-  if (['list','read','downloadLocal','rmdir'].includes(method)) paths=[[args[0],false]];
+  if (['list','read','downloadLocal','rmdir','getPermissions','setPermissions'].includes(method)) paths=[[args[0],false]];
   else if(['write','uploadLocal'].includes(method)) paths=[[method==='write'?args[0]:args[1],true]];
   else if(parentOnly.includes(method)) paths=[[args[0],true,true]];
   else if(method==='rename') paths=[[args[0],true,true],[args[1],true,true]];
@@ -244,6 +244,17 @@ async function operation(session,method,...args) {
   if (method==='stat') {
     if (session.type==='ftp') return ftpFind(session,args[0]);
     return sftpStat(c,args[0]);
+  }
+  if(method==='getPermissions'||method==='setPermissions') {
+    if(session.type!=='sftp')throw new Error('File permissions are supported through SFTP only.');
+    if(typeof args[0]!=='string'||!args[0].startsWith('/'))throw new Error('Invalid permission target path.');
+    if(method==='getPermissions') {
+      const stat=await c.stat(args[0]);
+      if(!Number.isInteger(stat?.mode))throw new Error('SFTP server did not provide Unix permission bits.');
+      return stat.mode & 0o7777;
+    }
+    if(!Number.isInteger(args[1])||args[1]<0||args[1]>0o7777)throw new Error('Permission mode must contain 3 or 4 octal digits.');
+    return c.chmod(args[0],args[1]);
   }
   if(method==='uploadLocal') {
     const [local,remote,progress]=args;

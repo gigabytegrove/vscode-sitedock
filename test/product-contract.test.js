@@ -86,3 +86,18 @@ test('version and update settings agree with presented user experience', () => {
   assert.match(managerPage, /u\.phase==='error'/);
   assert.match(managerPage, /u\.phase==='available'/);
 });
+
+test('site profile and local diff functions are discoverable and wired into normal UI',()=>{
+  for(const name of ['importSites','exportSites','compareLocal','permissions']){
+    assert.ok(manifest.contributes.commands.some(entry=>entry.command===`sitedock.${name}`),`missing ${name} command`);
+    assert.match(extension,new RegExp(`command\\('sitedock\\.${name}'`));
+    assert.ok(Object.values(manifest.contributes.menus).flat().some(item=>item.command===`sitedock.${name}`),`${name} not in VS Code UI`);
+  }
+  for(const action of ['importSites','exportSites']){
+    assert.match(managerPage,new RegExp(`data-action="${action}"`));
+    assert.match(managerController,new RegExp(`'${action}'`));
+  }
+  assert.match(extension,/executeCommand\('vscode.diff'/);
+  assert.match(extension,/getPermissions/);
+  assert.match(extension,/setPermissions/);
+});
