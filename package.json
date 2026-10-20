@@ -1,8 +1,8 @@
 {
   "name": "sitedock",
-  "displayName": "SiteDock — Live FTP & SFTP",
+  "displayName": "SiteDock \u2014 Live FTP & SFTP",
   "description": "Multi-site FTP, FTPS and SFTP editor with focused site management, secure GitHub Releases updates, media previews, and transfer activity.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "GigabyteGrove",
   "license": "MIT",
   "engines": {
@@ -333,6 +333,16 @@
           "command": "sitedock.switchSite",
           "when": "view == sitedock.sites",
           "group": "navigation@4"
+        },
+        {
+          "command": "sitedock.checkUpdates",
+          "when": "view == sitedock.managerSites",
+          "group": "navigation@3"
+        },
+        {
+          "command": "sitedock.updateSettings",
+          "when": "view == sitedock.managerSites",
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
@@ -479,7 +489,7 @@
       ]
     },
     "configuration": {
-      "title": "SiteDock · GitHub Updates",
+      "title": "SiteDock \u00b7 GitHub Updates",
       "properties": {
         "sitedock.updates.enabled": {
           "type": "boolean",
@@ -510,7 +520,7 @@
           "default": 12,
           "minimum": 1,
           "maximum": 168,
-          "description": "Minimum time between automatic update checks, in hours (1–168)."
+          "description": "Minimum time between automatic update checks, in hours (1\u2013168)."
         },
         "sitedock.updates.autoInstall": {
           "type": "boolean",
