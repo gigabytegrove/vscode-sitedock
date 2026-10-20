@@ -102,10 +102,17 @@ test('site profile and local diff functions are discoverable and wired into norm
   assert.match(extension,/setPermissions/);
 });
 
-test('private source cannot accidentally be configured as the default public update feed',()=>{
-  const expected='gigabytegrove/sitedock-releases';
+test('source and release distribution use the same public GitHub repository everywhere',()=>{
+  const expected='gigabytegrove/vscode-sitedock';
+  const forbidden='gigabytegrove/sitedock-releases';
   assert.equal(manifest.contributes.configuration.properties['sitedock.updates.repository'].default,expected);
-  for(const location of ['src/updates.js','src/update-utils.js','src/extension.js','scripts/publish-release.js','Build-GitHub-Release.ps1']){
-    assert.ok(file(location).includes(expected),`wrong public release feed in ${location}`);
+  for(const location of ['package.json','src/updates.js','src/update-utils.js','src/extension.js',
+    'scripts/publish-release.js','Build-GitHub-Release.ps1','Setup-Public-Releases.ps1',
+    'GITHUB_RELEASES.md','README.md','QUALITY_GATES.md','RELEASE_NOTES.md']){
+    const content=file(location);
+    assert.ok(content.includes(expected),`original GitHub repository missing in ${location}`);
+    assert.ok(!content.includes(forbidden),`obsolete separate-releases repo referenced by ${location}`);
   }
+  assert.match(file('scripts/publish-release.js'),/option\('--repo','gigabytegrove\/vscode-sitedock'\)/);
+  assert.match(file('Build-GitHub-Release.ps1'),/\$Repository='gigabytegrove\/vscode-sitedock'/);
 });

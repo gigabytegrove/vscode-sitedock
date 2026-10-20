@@ -13,7 +13,7 @@
 </div>
 
 > [!IMPORTANT]
-> **GitHub-only distribution.** SiteDock does not require the Visual Studio Marketplace. Install the first official VSIX manually; subsequent GitHub Releases can be checked and installed from inside VS Code. **The source repository is currently private:** updates require a *public* release repository. See [distribution setup](GITHUB_RELEASES.md) before attempting to publish.
+> **GitHub-only distribution.** SiteDock does not require the Visual Studio Marketplace. Install the first official VSIX manually; subsequent GitHub Releases can be checked and installed from inside VS Code. **The source repository is public:** official VSIX files and checksums will be published directly under [gigabytegrove/vscode-sitedock/releases](https://github.com/gigabytegrove/vscode-sitedock/releases). No second repository is required. A public GitHub Release has not been published yet.
 
 ## Why SiteDock?
 
@@ -82,7 +82,7 @@ The **officially packaged** extension includes its FTP/SFTP transport dependenci
 
 ### Install SiteDock
 
-1. Obtain the latest *verified official* `sitedock-vX.Y.Z.vsix` from the [GitHub Releases page](https://github.com/gigabytegrove/sitedock-releases/releases) **once the project has a public release feed**. Until then, use [Build from source](#build-from-source).
+1. Obtain the latest *verified official* `sitedock-vX.Y.Z.vsix` from the [GitHub Releases page](https://github.com/gigabytegrove/vscode-sitedock/releases) **once a release has been published**. Until then, use [Build from source](#build-from-source).
 2. In VS Code run **Extensions: Install from VSIX...** (Command Palette: `Ctrl+Shift+P` / `Cmd+Shift+P`).
 3. Select the `.vsix` file and **Reload Window** if requested.
 4. Open the SiteDock Activity Bar view and launch **Site Manager**.
@@ -121,11 +121,11 @@ SiteDock checks releases from the public GitHub repository configured in the **S
 | --- | --- | --- |
 | `sitedock.updates.enabled` | `true` | Automatic update checks |
 | `sitedock.updates.channel` | `stable` | `stable` or `beta` (beta also allows stable releases) |
-| `sitedock.updates.repository` | `gigabytegrove/sitedock-releases` | Public GitHub Releases repository (`owner/repo`) |
+| `sitedock.updates.repository` | `gigabytegrove/vscode-sitedock` | Public GitHub Releases repository (`owner/repo`) |
 | `sitedock.updates.checkIntervalHours` | `12` | Check interval, clamped to 1–168 hours |
 | `sitedock.updates.autoInstall` | `false` | Automatically install a verified update |
 
-**Private source, public distribution:** The source repository can remain private, but clients cannot access a private repo's releases anonymously. Use a separate **public** GitHub repository for the official VSIX files, then configure `sitedock.updates.repository` to that repository. No embedded PAT or personal GitHub credentials are used. See [GITHUB_RELEASES.md](GITHUB_RELEASES.md) for publishing instructions.
+**One repository for code and downloads:** `gigabytegrove/vscode-sitedock` is public. Its GitHub Releases page is also the sole official update feed; no additional release repository or GitHub credentials in the extension are required. See [GITHUB_RELEASES.md](GITHUB_RELEASES.md) to publish a verified build. **v0.3.1 already defaulted to this URL; no update setting change is needed for users running that version unless they overrode it manually.**
 
 **Safety behavior:** Unverified archives, wrong publisher IDs, unexpected versions, unsupported download hosts and ambiguous release assets are rejected. SiteDock never intentionally downgrades an installed version. Updates replace the extension code **under the same extension ID**, preserving your sites and VS Code SecretStorage. This is not a substitute for keeping server backups.
 
@@ -212,7 +212,7 @@ Every significant feature must pass the [product acceptance and release gates](Q
 
 ## Release readiness
 
-**The repository is not yet a downloadable public GitHub Release.** SiteDock v0.4.0 has automated tests and a browser-rendered mock of Site Manager interactions, but an official `vsce` package, end-to-end desktop testing, a publicly accessible release feed, and live FTP/SFTP verification are outstanding. See [release acceptance gates](QUALITY_GATES.md), [release notes](RELEASE_NOTES.md), and [GitHub publishing](GITHUB_RELEASES.md). Do not distribute manually assembled development VSIX files as a final release.
+**The repository is not yet a downloadable public GitHub Release.** SiteDock v0.4.0 has automated tests and a browser-rendered mock of Site Manager interactions, but an official `vsce` package, end-to-end desktop testing, a published GitHub Release, and live FTP/SFTP verification are outstanding. See [release acceptance gates](QUALITY_GATES.md), [release notes](RELEASE_NOTES.md), and [GitHub publishing](GITHUB_RELEASES.md). Do not distribute manually assembled development VSIX files as a final release.
 
 ## License and contributions
 

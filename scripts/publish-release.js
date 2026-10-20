@@ -15,7 +15,7 @@ function invoke(commands,{json=false}={}){
   return json?JSON.parse(r.stdout):r.stdout.trim();
 }
 async function main(){
-  const repo=releaseRepository(option('--repo','gigabytegrove/sitedock-releases'));
+  const repo=releaseRepository(option('--repo','gigabytegrove/vscode-sitedock'));
   const tag=`v${pkg.version}`;
   const prerelease=Boolean(versionParts(pkg.version).pre.length);
   const vsix=path.resolve(__dirname,'..','dist',`sitedock-v${pkg.version}.vsix`);

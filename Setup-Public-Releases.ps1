@@ -1,29 +1,29 @@
 #Requires -Version 5.1
+# Compatibility launcher retained for users with earlier instructions.
+# SiteDock releases live in the EXISTING PUBLIC source repository; no repository is created here.
 [CmdletBinding()]
-param([string]$Repository='gigabytegrove/sitedock-releases', [switch]$Create, [switch]$BuildAndPublish)
+param(
+    [string]$Repository='gigabytegrove/vscode-sitedock',
+    [switch]$Create,
+    [switch]$BuildAndPublish
+)
 $ErrorActionPreference='Stop'
-if ($Repository -notmatch '^[A-Za-z0-9][A-Za-z0-9-]*/[-A-Za-z0-9_.]+$') { throw 'Repository must be owner/name.' }
-if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { throw 'Install GitHub CLI and run gh auth login before proceeding.' }
-
-$existing = $null
-try {
-    $existing = (& gh repo view $Repository --json visibility,isPrivate,defaultBranchRef 2>$null | ConvertFrom-Json)
-} catch { $existing = $null }
-if ($LASTEXITCODE -ne 0 -or -not $existing) {
-    if (-not $Create) { throw "Repository $Repository does not exist or is inaccessible. Re-run with -Create to intentionally create it PUBLIC." }
-    Write-Host "Creating PUBLIC GitHub repository: $Repository" -ForegroundColor Yellow
-    & gh repo create $Repository --public --add-readme --description 'SiteDock VS Code extension official GitHub Releases (VSIX and SHA-256 files)'
-    if ($LASTEXITCODE -ne 0) { throw 'Could not create public repository. Check organization creation permissions.' }
-    $existing = (& gh repo view $Repository --json visibility,isPrivate,defaultBranchRef | ConvertFrom-Json)
+if ($Create) {
+    throw 'No new repository is required. Remove -Create and use the existing public gigabytegrove/vscode-sitedock repository.'
 }
-if ($existing.isPrivate -or $existing.visibility -ne 'PUBLIC') {
-    throw "Repository $Repository is private. No visibility changes were made. Select an existing PUBLIC release repository."
+if ($Repository -ne 'gigabytegrove/vscode-sitedock') {
+    throw 'SiteDock releases must be published in gigabytegrove/vscode-sitedock; another destination is not configured.'
 }
-if (-not $existing.defaultBranchRef.name) { throw 'Release repository is missing a default branch.' }
-Write-Host "PUBLIC RELEASE FEED READY: https://github.com/$Repository/releases" -ForegroundColor Green
-Write-Host "Set VS Code: sitedock.updates.repository = `"$Repository`"" -ForegroundColor Cyan
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    throw 'Install GitHub CLI and authenticate using gh auth login before publishing.'
+}
+$info = (& gh repo view $Repository --json visibility,isPrivate,defaultBranchRef | ConvertFrom-Json)
+if ($LASTEXITCODE -ne 0 -or -not $info) { throw 'Cannot inspect the SiteDock source repository. Check GitHub CLI login and permissions.' }
+if ($info.isPrivate -or $info.visibility -ne 'PUBLIC') { throw 'The source repository must be public for anonymous update downloads.' }
+if (-not $info.defaultBranchRef.name) { throw 'The source repository has no initialized default branch.' }
+Write-Host "SiteDock release destination: https://github.com/$Repository/releases" -ForegroundColor Green
 if ($BuildAndPublish) {
     $script = Join-Path $PSScriptRoot 'Build-GitHub-Release.ps1'
     & $script -Repository $Repository -Publish
-    if ($LASTEXITCODE -ne 0) { throw 'GitHub release build or publication failed.' }
+    if (-not $?) { throw 'SiteDock build or publication failed.' }
 }

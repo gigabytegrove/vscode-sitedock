@@ -45,12 +45,12 @@ npm run release:verify
 The first gate requires no internet when Node.js is available. The packaging gates require the official packaging dependency; failure to run them is a **blocker to claiming a release**, not grounds for substituting a manually assembled VSIX.
 
 > [!IMPORTANT]
-> The source repository can remain private, but anonymous update checks require a **public GitHub Releases repository**. A local build without published release assets cannot validate the end-to-end updater.
+> The public source repository `gigabytegrove/vscode-sitedock` is also the **only official GitHub Releases feed**. A local build without published release assets cannot validate the end-to-end updater. No separate releases repository is needed.
 
 ## Evidence format for future completion reports
 
 Always report: **commit SHA**, **files/areas changed**, **test command + pass/fail count**, **official VSIX build verification**, **desktop VS Code scenarios actually exercised**, **live FTP/SFTP scenarios actually exercised**, **release URL or blocker**, and **remaining limitations**. Explicitly distinguish *not run*, *mocked*, *passed locally*, and *confirmed on GitHub*.
 
-## Current known unverified work (v0.3.1)
+## Current known unverified work (v0.4.0)
 
-Site Manager updater controls are wired into source and covered by mocked/integration tests. **Official VSIX packaging, desktop installation, real GitHub release detection and in-app upgrade/reload, and live-server end-to-end tests have not been demonstrated here.** The source repository is private and does not itself provide anonymous release updates. Therefore v0.3.1 is a **source implementation**, not a verified public release.
+Site Manager updater controls, import/export, remote/local comparison, and SFTP chmod are wired into source with local automated tests. A separate Chromium-rendered, mocked Site Manager UI smoke test verifies button dispatch, not actual VS Code behavior. **Official VSIX packaging, desktop installation, real GitHub release detection and in-app upgrade/reload, and live-server end-to-end tests are not demonstrated.** The source repository is public but currently has no published releases. Therefore v0.4.0 remains a **release candidate source**, not a verified public release.

@@ -219,3 +219,13 @@ test('update settings change clears stale install choices and publishes idle sta
     updater.dispose();
   }finally{await fs.rm(dir,{recursive:true,force:true});}
 });
+
+test('v0.3.1 clients can discover newer releases in the original public repo',()=>{
+  const {DEFAULT_REPOSITORY}=require('../src/updates');
+  assert.equal(DEFAULT_REPOSITORY,'gigabytegrove/vscode-sitedock');
+  const pkg=require('../package.json');
+  assert.equal(pkg.contributes.configuration.properties['sitedock.updates.repository'].default,DEFAULT_REPOSITORY);
+  const next=chooseRelease([release('0.4.0')],{currentVersion:'0.3.1',repository:DEFAULT_REPOSITORY,channel:'stable'});
+  assert.equal(next.version,'0.4.0');
+  assert.equal(next.releaseUrl,`https://github.com/${DEFAULT_REPOSITORY}/releases/tag/v0.4.0`);
+});

@@ -551,7 +551,7 @@
         },
         "sitedock.updates.repository": {
           "type": "string",
-          "default": "gigabytegrove/sitedock-releases",
+          "default": "gigabytegrove/vscode-sitedock",
           "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*/[-A-Za-z0-9_.]+$",
           "description": "Public GitHub repository containing SiteDock releases (owner/repo). For private source, use a separate public releases repository; no tokens or credentials are stored."
         },
