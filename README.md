@@ -173,7 +173,7 @@ npm run release:build
 npm run release:verify
 ```
 
-The verified official VSIX and its SHA-256 sidecar appear in `dist/`. The Windows equivalent is **`Build-GitHub-Release.ps1`**; see [GITHUB_RELEASES.md](GITHUB_RELEASES.md) for release publication without GitHub Actions or the Visual Studio Marketplace.
+The verified official VSIX and its SHA-256 sidecar appear in `dist/`. The Windows equivalent is **`Build-GitHub-Release.cmd` or `Build-GitHub-Release.ps1`**; see [GITHUB_RELEASES.md](GITHUB_RELEASES.md) for release publication without GitHub Actions or the Visual Studio Marketplace.
 
 **Testing scope:** Node.js tests cover the site manager, simulated remote operations, update filtering, checksum/ZIP verification, and mocked VS Code update installation. They **do not** constitute an end-to-end desktop VS Code/real-server test. Confirm those environments before calling a build production ready.
 
