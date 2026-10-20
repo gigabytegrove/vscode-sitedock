@@ -71,6 +71,14 @@ class SiteStore {
     await this.context.globalState.update(KEY,[...existing,...normalized]);
     return profiles.length;
   }
+  async duplicate(id) {
+    const original=this.get(id);
+    if(!original)throw new Error('The selected site no longer exists.');
+    const clone=validateSite({...original,id:undefined,name:`${original.name} (copy)`.slice(0,80),
+      auth:original.auth==='key'?'password':original.auth,keyPath:'',fingerprint:'',followExternalLinks:false});
+    await this.importProfiles([clone]);
+    return clone;
+  }
   async trustKey(id, fingerprint) {
     if (!/^[0-9a-f]{64}$/.test(fingerprint)) throw new Error('Invalid host fingerprint.');
     const site=this.get(id);

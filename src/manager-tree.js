@@ -8,7 +8,7 @@ class ManagerTree {
     const item=new v.TreeItem(site.name,v.TreeItemCollapsibleState.None);
     item.id=`managed:${site.id}`;
     item.contextValue=site.isOpen?'sitedock.managedOpen':'sitedock.managedClosed';
-    item.description=site.isActive?'ACTIVE · OPEN':site.isOpen?'OPEN':`${site.protocol.toUpperCase()} · ${site.host}`;
+    item.description=(site.group?site.group+' · ':'')+(site.isActive?'ACTIVE · OPEN':site.isOpen?'OPEN':`${site.protocol.toUpperCase()} · ${site.host}`);
     item.tooltip=`${site.name}\n${site.protocol.toUpperCase()}://${site.host}:${site.port}${site.root}\n${site.isOpen?'Click to focus this site':'Click to open this site'}${site.isFavorite?'\n★ Favorite':''}`;
     item.iconPath=new v.ThemeIcon(site.isFavorite?'star-full':site.isActive?'folder-active':site.isOpen?'folder-opened':'server');
     item.command={command:site.isOpen?'sitedock.focusSite':'sitedock.openSite',title:site.isOpen?'Focus site':'Open site',arguments:[site]};

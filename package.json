@@ -1,8 +1,8 @@
 {
   "name": "sitedock",
-  "displayName": "SiteDock \u2014 Live FTP & SFTP",
-  "description": "Multi-site FTP, FTPS and SFTP editor with focused site management, secure GitHub Releases updates, media previews, and transfer activity.",
-  "version": "0.4.0",
+  "displayName": "SiteDock — Live FTP & SFTP",
+  "description": "Multi-site FTP, FTPS and SFTP editor with organized Site Manager, safe remote filename search, verified GitHub updates, and transfer activity.",
+  "version": "0.5.0",
   "publisher": "GigabyteGrove",
   "license": "MIT",
   "engines": {
@@ -315,6 +315,26 @@
         "command": "sitedock.permissions",
         "title": "SiteDock: Change SFTP File Permissions",
         "icon": "$(lock)"
+      },
+      {
+        "command": "sitedock.groupSite",
+        "title": "SiteDock: Move Site to Group",
+        "icon": "$(folder-library)"
+      },
+      {
+        "command": "sitedock.duplicateSite",
+        "title": "SiteDock: Duplicate Site (Without Credentials)",
+        "icon": "$(files)"
+      },
+      {
+        "command": "sitedock.searchRemote",
+        "title": "SiteDock: Find Remote Files",
+        "icon": "$(search)"
+      },
+      {
+        "command": "sitedock.setSiteSort",
+        "title": "SiteDock: Sort Sites",
+        "icon": "$(list-ordered)"
       }
     ],
     "menus": {
@@ -373,6 +393,16 @@
           "command": "sitedock.exportSites",
           "when": "view == sitedock.managerSites",
           "group": "navigation@4"
+        },
+        {
+          "command": "sitedock.searchRemote",
+          "when": "view == sitedock.sites",
+          "group": "navigation@5"
+        },
+        {
+          "command": "sitedock.setSiteSort",
+          "when": "view == sitedock.managerSites",
+          "group": "navigation@5"
         }
       ],
       "view/item/context": [
@@ -525,11 +555,41 @@
           "command": "sitedock.permissions",
           "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.directory)",
           "group": "4_manage@3"
+        },
+        {
+          "command": "sitedock.groupSite",
+          "when": "view == sitedock.managerSites && (viewItem == sitedock.managedOpen || viewItem == sitedock.managedClosed)",
+          "group": "2_manage@5"
+        },
+        {
+          "command": "sitedock.duplicateSite",
+          "when": "view == sitedock.managerSites && (viewItem == sitedock.managedOpen || viewItem == sitedock.managedClosed)",
+          "group": "2_manage@6"
+        },
+        {
+          "command": "sitedock.searchRemote",
+          "when": "view == sitedock.managerSites && (viewItem == sitedock.managedOpen || viewItem == sitedock.managedClosed)",
+          "group": "1_navigation@5"
+        },
+        {
+          "command": "sitedock.groupSite",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "2_manage@5"
+        },
+        {
+          "command": "sitedock.duplicateSite",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "2_manage@6"
+        },
+        {
+          "command": "sitedock.searchRemote",
+          "when": "view == sitedock.sites && viewItem == sitedock.site",
+          "group": "1_navigation@5"
         }
       ]
     },
     "configuration": {
-      "title": "SiteDock \u00b7 GitHub Updates",
+      "title": "SiteDock · GitHub Updates",
       "properties": {
         "sitedock.updates.enabled": {
           "type": "boolean",
@@ -560,7 +620,7 @@
           "default": 12,
           "minimum": 1,
           "maximum": 168,
-          "description": "Minimum time between automatic update checks, in hours (1\u2013168)."
+          "description": "Minimum time between automatic update checks, in hours (1–168)."
         },
         "sitedock.updates.autoInstall": {
           "type": "boolean",
@@ -572,7 +632,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/site-profiles.js && node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
+    "check": "node --check src/search-remote.js && node --check src/site-profiles.js && node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
     "package": "vsce package --allow-missing-repository",
     "package:all": "npm run check && npm run package",
     "release:build": "node scripts/build-release.js",

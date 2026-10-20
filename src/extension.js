@@ -18,6 +18,7 @@ const manifest=require('../package.json');
 const {openRemoteFile,openInDesktopApp}=require('./opening');
 const {createUpdater}=require('./updates');
 const {exportProfiles,previewImport,MAX_BYTES}=require('./site-profiles');
+const {searchRemoteFiles}=require('./search-remote');
 
 let disposeIO;
 function uriFor(node) {return vscode.Uri.from({scheme:'sitedock',authority:node.id,path:node.kind==='site'?'/':node.path});}
@@ -137,7 +138,11 @@ async function activate(context) {
     checkUpdate:()=>updater.check({manual:true,prompt:false}),
     installUpdate:()=>updater.installAvailable(),
     updateSettings:()=>vscode.commands.executeCommand('workbench.action.openSettings','sitedock.updates'),
-    viewReleases:()=>vscode.commands.executeCommand('sitedock.viewReleases')
+    viewReleases:()=>vscode.commands.executeCommand('sitedock.viewReleases'),
+    groupSite:id=>vscode.commands.executeCommand('sitedock.groupSite',{id}),
+    duplicateSite:id=>vscode.commands.executeCommand('sitedock.duplicateSite',{id}),
+    searchRemote:id=>vscode.commands.executeCommand('sitedock.searchRemote',{id}),
+    setSiteSort:()=>vscode.commands.executeCommand('sitedock.setSiteSort')
   });
   command('sitedock.exportSites',async()=>{
     const sites=store.all();
@@ -167,6 +172,51 @@ async function activate(context) {
     await store.importProfiles(plan.imports);
     await workspaces.sync();refreshViews();
     await vscode.window.showInformationMessage(`Imported ${plan.imports.length} site(s). Configure credentials using Edit Server before connecting.`);
+  });
+
+  command('sitedock.groupSite',async node=>{
+    const site=await getSelected(node);if(!site)return;
+    const existing=workspaces.snapshot.groups[site.id]||'';
+    const group=await vscode.window.showInputBox({title:`Organize ${site.name}`,prompt:'Enter a group name (e.g. Production, Clients) or clear it to ungroup.',value:existing,
+      validateInput:value=>{try{require('./workspaces').groupName(value);return null;}catch(err){return err.message;}}});
+    if(group===undefined)return;
+    await workspaces.group(site.id,group);
+  });
+  command('sitedock.duplicateSite',async node=>{
+    const site=await getSelected(node);if(!site)return;
+    const answer=await vscode.window.showWarningMessage(`Duplicate connection “${site.name}”?`,
+      {modal:true,detail:'Creates a separate connection with no copied password, private key path, SSH fingerprint trust, or external-link permission. You will need to configure credentials before connecting.'},'Duplicate Site');
+    if(answer!=='Duplicate Site')return;
+    const copy=await store.duplicate(site.id);
+    const group=workspaces.snapshot.groups[site.id];if(group)await workspaces.group(copy.id,group);
+    refreshViews();
+    await editor.open(copy.id);
+    await vscode.window.showInformationMessage(`Created ${copy.name}. Set its credentials in the server editor.`);
+  });
+  command('sitedock.setSiteSort',async()=>{
+    const choices=[{label:'Smart (open and favorites first)',value:'smart'},{label:'Site name',value:'name'},{label:'Hostname',value:'host'}];
+    const choice=await vscode.window.showQuickPick(choices,{placeHolder:'Sort sites in Site Manager'});
+    if(choice)await workspaces.setSort(choice.value);
+  });
+  command('sitedock.searchRemote',async node=>{
+    const site=await getSelected(node);if(!site)return;
+    const query=await vscode.window.showInputBox({title:`Find remote files · ${site.name}`,placeHolder:'Filename contains…',prompt:'Filename search within this site. Linked folders are skipped and the scan is bounded.'});
+    if(query===undefined)return;
+    if(!query.trim())throw new Error('Enter a filename or partial filename to search.');
+    const report=await vscode.window.withProgress({location:vscode.ProgressLocation.Notification,
+      title:`SiteDock: Searching ${site.name}`,cancellable:true},async(progress,token)=>
+      searchRemoteFiles({query,signal:token,list:virtual=>doRemote(site.id,'list',remotePath(site,virtual)),
+        onProgress:stats=>progress.report({message:`${stats.directories} folders · ${stats.entriesSeen} entries · ${stats.matches} matches`})}));
+    if(report.cancelled){await vscode.window.showInformationMessage(`Search cancelled after ${report.directories} folders.`);return;}
+    if(!report.matches.length){await vscode.window.showInformationMessage(`No filenames matching “${query.trim()}” found on ${site.name}${report.truncated?' within search limits':''}.`);return;}
+    const selected=await vscode.window.showQuickPick(report.matches.map(item=>({label:item.name,description:item.path,detail:item.type==='directory'?'Folder · select to open in explorer':'Remote file · select to open',match:item})),
+      {placeHolder:`${report.matches.length} matches${report.truncated?' (scan limit reached)':''} · ${report.directories} folders searched`,matchOnDescription:true});
+    if(!selected)return;
+    if(selected.match.type==='file')await openRemoteFile(vscode,vscode.Uri.from({scheme:'sitedock',authority:site.id,path:selected.match.path}),selected.match.name);
+    else {
+      await openSite(site.id);
+      await explorer.reveal({kind:'entry',id:site.id,path:selected.match.path,name:selected.match.name,type:'directory'}, {select:true,focus:true,expand:true});
+    }
   });
   command('sitedock.manager',()=>managerPanel.open());
   command('sitedock.openSite',async node=>{const site=await getSelected(node);if(site)await openSite(site.id);});

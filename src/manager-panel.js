@@ -8,7 +8,7 @@ function createManagerPanel(vscode,context,workspaces,store,actions){
   const subscriptions=[];
   const safeState=()=>({state:workspaces.snapshot,updates:actions.updateStatus?.()||null,sites:workspaces.managerSites().map(s=>({
     id:s.id,name:s.name,host:s.host,port:s.port,protocol:s.protocol,root:s.root,
-    isOpen:s.isOpen,isActive:s.isActive,isFavorite:s.isFavorite
+    isOpen:s.isOpen,isActive:s.isActive,isFavorite:s.isFavorite,group:s.group||''
   }))});
   function update(){if(panel)void panel.webview.postMessage({type:'state',...safeState()});}
   subscriptions.push(workspaces.onChange(update));
@@ -16,9 +16,9 @@ function createManagerPanel(vscode,context,workspaces,store,actions){
   async function handle(message){
     if(!message||typeof message!=='object'||typeof message.type!=='string')return;
     const commands=new Set(['open','focus','close','favorite','edit','test','window','openMany','closeOthers','mode','scope','add','closeAll',
-      'checkUpdate','installUpdate','updateSettings','viewReleases','exportSites','importSites']);
+      'checkUpdate','installUpdate','updateSettings','viewReleases','exportSites','importSites','groupSite','duplicateSite','searchRemote','setSiteSort']);
     if(!commands.has(message.type))return;
-    if(['checkUpdate','installUpdate','updateSettings','viewReleases','exportSites','importSites'].includes(message.type)){
+    if(['checkUpdate','installUpdate','updateSettings','viewReleases','exportSites','importSites','setSiteSort'].includes(message.type)){
       if(typeof actions[message.type]!=='function')throw new Error('Update action unavailable.');
       await actions[message.type]();return;
     }
