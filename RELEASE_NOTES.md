@@ -15,7 +15,7 @@
 
 - Build the distributable VSIX through the official `@vscode/vsce` package on a machine with npm access. Package must contain production transport dependencies.
 - Install the exact VSIX on a desktop VS Code test host; verify the Site Manager, import/export, diff editor, SFTP chmod, login, transfers, reload persistence, and GitHub updating.
-- Publish exactly one VSIX plus matching `.sha256` in a **public** GitHub Releases repository. The source repository can stay private.
+- Publish exactly one VSIX plus matching `.sha256` at **https://github.com/gigabytegrove/vscode-sitedock/releases**. The source repository is public; no separate release repository is needed.
 - Run the release acceptance procedures in [QUALITY_GATES.md](QUALITY_GATES.md) and [GITHUB_RELEASES.md](GITHUB_RELEASES.md).
 
 A local automated test run and a mocked webview smoke test do not substitute for real FTP/SFTP and desktop-release acceptance tests.

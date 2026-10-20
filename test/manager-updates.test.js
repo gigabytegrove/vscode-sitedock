@@ -14,7 +14,7 @@ function fakeManager(){
   const context={extensionPath:path.resolve(__dirname,'..')};
   const workspaces={snapshot:{mode:'manager',scope:'active',open:[],active:null},managerSites:()=>[],onChange:fn=>({dispose(){}})};
   let installed=0,checks=0,settings=0,releases=0;
-  let status={installedVersion:'0.3.1',phase:'idle',channel:'stable',repository:'gigabytegrove/sitedock-releases'};
+  let status={installedVersion:'0.3.1',phase:'idle',channel:'stable',repository:'gigabytegrove/vscode-sitedock'};
   const actions={
     updateStatus:()=>status,
     onUpdateChange:fn=>{updatesListener=fn;return {dispose(){updatesListener=null;}};},
@@ -32,7 +32,7 @@ test('site manager shows the installed version and controls without requiring a 
   const first=ui.posted.at(-1);
   assert.equal(first.updates.installedVersion,'0.3.1');
   assert.equal(first.updates.channel,'stable');
-  assert.equal(first.updates.repository,'gigabytegrove/sitedock-releases');
+  assert.equal(first.updates.repository,'gigabytegrove/vscode-sitedock');
   await ui.dispatch({type:'checkUpdate'});
   assert.equal(ui.totals().checks,1);
   assert.equal(ui.posted.at(-1).updates.phase,'available');
