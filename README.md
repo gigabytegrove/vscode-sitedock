@@ -10,7 +10,7 @@ Manage multiple servers, browse remote files, edit them in VS Code, and save cha
 
 [![Build and tests](https://github.com/gigabytegrove/vscode-sitedock/actions/workflows/build.yml/badge.svg)](https://github.com/gigabytegrove/vscode-sitedock/actions/workflows/build.yml)
 ![VS Code 1.100+](https://img.shields.io/badge/VS_Code-1.100%2B-007ACC)
-![Version 0.1.9](https://img.shields.io/badge/version-0.1.9-informational)
+![Version 0.2.0](https://img.shields.io/badge/version-0.2.0-informational)
 [![MIT License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 
 **[Get started](#getting-started) · [Features](#features) · [Build from source](#build-from-source) · [Troubleshooting](#troubleshooting) · [Report an issue](https://github.com/gigabytegrove/vscode-sitedock/issues)**
@@ -18,7 +18,19 @@ Manage multiple servers, browse remote files, edit them in VS Code, and save cha
 </div>
 
 > [!IMPORTANT]
-> **Development release — v0.1.9.** SiteDock has not yet been published to the VS Code Marketplace. This version also requires **Node.js/npm and access to the npm registry for its first FTP/SFTP connection**. Do not expect a fully offline, self-contained installation. The automated tests use simulated servers; compatibility with every hosting environment is not guaranteed.
+> **Development release — v0.2.0.** SiteDock is not yet published on the VS Code Marketplace. An official VSIX built after installing production dependencies bundles the FTP/SFTP libraries; v0.2.0 loads them directly, with a legacy npm fallback if the libraries are absent. This version has passed simulated tests, but real-server and desktop integration still need release verification.
+
+## Site Manager — work your way
+
+**SiteDock now has two main browsing modes.** Keep every saved site in the classic explorer, or open only the sites you are actively working on—just like a dedicated website manager.
+
+- **Site Manager / Active Site:** choose a site from the visual Site Manager dashboard and see only that site's files in **My Servers**. Other open sites stay ready in the background.
+- **Site Manager / All Open Sites:** keep multiple sites expanded side-by-side without showing closed sites.
+- **All Sites (classic):** show every saved connection, preserving SiteDock's original explorer behavior.
+
+Open **SiteDock: Open Site Manager** to search saved connections, select several sites to open together, mark favorites, open sites in separate VS Code windows, and close sites without removing their saved settings or credentials. **SiteDock: Switch Active Site** provides fast switching, and **SiteDock: Change Explorer Mode** changes the layout at any time.
+
+SiteDock remembers your mode, open sites, active site, favorites, and recent selections across VS Code restarts. Closing a site hides it from the managed explorer; it does **not** delete remote files or cancel already-open editor tabs.
 
 ## Why SiteDock?
 
@@ -26,7 +38,7 @@ Remote editing shouldn't require a new project, a JSON configuration file, or a 
 
 SiteDock brings the familiar file explorer and editor experience into VS Code:
 
-- **All your servers in one place.** Save separate websites, environments, and hosting accounts in a dedicated sidebar.
+- **All your servers, your way.** Use the classic explorer or a focused Site Manager with multiple concurrent sites and favorites.
 - **Edit on the server.** Open a remote text file and press **Ctrl+S** to write your changes directly to its remote path.
 - **Use the right viewer.** Open images in VS Code's image preview, play supported media, or use a registered VS Code editor.
 - **See what's happening.** Track uploads, downloads, saves, errors, and recent file operations in **Transfers & Activity**.
@@ -64,7 +76,7 @@ Right-click **Open as Text** to inspect a file's source, including SVG markup. *
 
 - Desktop **Visual Studio Code 1.100.0 or newer** (the project is not a browser-based FTP client).
 - Access to an FTP, FTPS, or SFTP server.
-- **Node.js with npm**, plus connectivity to `registry.npmjs.org`, for the one-time transport-library setup in this version.
+- **For source builds:** Node.js with npm. Official VSIX builds containing their production dependencies load transport libraries without a separate first-run npm download.
 
 ### Install the extension
 
@@ -73,7 +85,7 @@ SiteDock is not yet available for one-click Marketplace installation. Until it i
 1. Build a VSIX from source using the instructions [below](#build-from-source), **or** download the VSIX artifact from a **successful** [GitHub Actions build](https://github.com/gigabytegrove/vscode-sitedock/actions/workflows/build.yml).
 2. In **VS Code**, press **Ctrl+Shift+P** (or **Cmd+Shift+P** on macOS).
 3. Run **Extensions: Install from VSIX...**, select the VSIX, and reload the window.
-4. Run **SiteDock: Install Connection Libraries** from the Command Palette. The libraries are cached for subsequent connections.
+4. For an official VSIX with bundled dependencies, start connecting immediately. If you installed an older/incomplete package, run **SiteDock: Install Connection Libraries** to use the legacy fallback.
 
 **Windows note:** Install a VS Code VSIX **inside VS Code**. Double-clicking it in File Explorer may launch the unrelated Visual Studio VSIX installer.
 
@@ -139,7 +151,7 @@ SiteDock is intended for authorized remote-server access.
 - **Live writes are not guaranteed atomic.** Interrupted network transfers may leave incomplete remote uploads; keep server-side backups.
 - **Conflict checks are best-effort.** They compare server-provided file metadata, which may not detect every concurrent edit.
 - **External apps are separate.** Opening a downloaded local copy in another application does not enable automatic synchronization.
-- **Transport installation is not bundled into startup.** The v0.1.9 runtime invokes npm once to prepare `basic-ftp` and `ssh2-sftp-client` in VS Code's writable extension storage.
+- **Bundled transports first.** The v0.2.0 runtime loads included `basic-ftp` and `ssh2-sftp-client` packages when present. Only incomplete/legacy builds need npm to prepare them in extension storage.
 
 ## Troubleshooting
 
@@ -155,7 +167,7 @@ Compare the connection with an independent SSH/SFTP client before changing serve
 <details>
 <summary><strong>Connection libraries won't install</strong></summary>
 
-Install Node.js LTS and ensure `node` and `npm` are accessible on your PATH. Confirm access to `registry.npmjs.org`, then run **SiteDock: Install Connection Libraries** again. Read **Output → SiteDock** for the underlying npm error.
+A properly packaged v0.2.0 VSIX includes its transport packages. Verify the VSIX has `extension/node_modules/basic-ftp` and `extension/node_modules/ssh2-sftp-client` installed. For an incomplete/legacy package, install Node.js LTS, confirm registry access, then run **SiteDock: Install Connection Libraries** again. Read **Output → SiteDock** for the underlying npm error.
 
 </details>
 
@@ -201,7 +213,7 @@ npm run check
 npm run package
 ```
 
-The resulting `.vsix` can be installed through **Extensions: Install from VSIX...**. The project uses Node.js 22 in [GitHub Actions](.github/workflows/build.yml).
+The resulting `.vsix` can be installed through **Extensions: Install from VSIX...**. The existing build workflow uses Node.js 22. The included Windows build scripts also use the official `@vscode/vsce` packager.
 
 On Windows, you can also run **`Build-Official-VSIX.cmd`** to build and validate a release candidate; see [PUBLISHING.md](PUBLISHING.md) for Marketplace packaging details.
 
@@ -209,7 +221,10 @@ On Windows, you can also run **`Build-Official-VSIX.cmd`** to build and validate
 
 ```text
 src/
-  extension.js    VS Code activation, commands, and views
+  extension.js    VS Code activation, site management commands and views
+  workspaces.js   Open-site/favorite/active-site persisted state
+  manager-tree.js Dedicated native Site Manager sidebar
+  manager-panel.js Visual Site Manager webview integration
   connection.js   FTP/FTPS/SFTP transport and remote operations
   filesystem.js   VS Code remote filesystem provider
   tree.js         Multi-site explorer and symlink presentation
@@ -222,18 +237,19 @@ src/
   paths.js        Remote path helpers
 ui/
   editor.html     Graphical connection editor
+  manager.html    Searchable multi-site dashboard
 media/            Extension icon and Activity Bar artwork
 test/             Automated Node.js tests
 .github/workflows/build.yml   CI checks and VSIX artifact
 ```
 
-The automated suite covers file handling, authentication behavior, activity/transfer logic, and filesystem simulations. **Passing unit tests is not proof of successful integration against every live FTP/SFTP server.**
+The automated suite covers file handling, authentication behavior, site-manager state, concurrent open-site operations, activity/transfer logic, and filesystem simulations. **Passing unit tests is not proof of successful integration against every live FTP/SFTP server.**
 
 ## Contributing and publishing
 
 Bug reports, reproducible test cases, documentation improvements, and pull requests are welcome. Please run `npm run check` before submitting code changes, and do not include credentials or production-server information in issues or commits.
 
-The VS Code Marketplace publishing process is tracked separately from source development. See [PUBLISHING.md](PUBLISHING.md) for instructions; a GitHub build artifact does **not** mean that a Marketplace release has been approved.
+The VS Code Marketplace publishing process is tracked separately from source development. See [PUBLISHING.md](PUBLISHING.md) for instructions; a GitHub build artifact does **not** mean that a Marketplace release has been approved. Track unimplemented enhancements in [ROADMAP.md](ROADMAP.md).
 
 ## License
 

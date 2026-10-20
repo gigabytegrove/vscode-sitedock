@@ -6,7 +6,7 @@ function formatBytes(n){
   return `${n>=10?n.toFixed(0):n.toFixed(1)} ${units[unit]}`;
 }
 class SiteTree {
-  constructor(vscode,store,run) {this.vscode=vscode;this.store=store;this.run=run;this.events=new vscode.EventEmitter();this.onDidChangeTreeData=this.events.event;}
+  constructor(vscode,store,run,workspaces=null) {this.vscode=vscode;this.store=store;this.run=run;this.workspaces=workspaces;this.events=new vscode.EventEmitter();this.onDidChangeTreeData=this.events.event;}
   refresh(target) {this.events.fire(target);}
   getTreeItem(node) {
     const v=this.vscode;
@@ -14,7 +14,8 @@ class SiteTree {
       const site=this.store.get(node.id);
       const item=new v.TreeItem(site?.name || 'Removed server',v.TreeItemCollapsibleState.Collapsed);
       item.id=`site:${node.id}`;
-      item.description=site?`${site.protocol.toUpperCase()} · ${site.host}`:'';
+      const active=this.workspaces?.snapshot.active===node.id&&this.workspaces?.snapshot.mode==='manager';
+      item.description=site?`${active?'ACTIVE · ':''}${site.protocol.toUpperCase()} · ${site.host}`:'';
       item.tooltip=site?`${site.name}\n${site.protocol.toUpperCase()}://${site.host}:${site.port}${site.root}\nRight-click for server actions`:undefined;
       item.contextValue='sitedock.site'; item.iconPath=new v.ThemeIcon('server');return item;
     }
@@ -35,7 +36,7 @@ class SiteTree {
     return item;
   }
   async getChildren(element) {
-    if (!element) return this.store.all().map(site=>({kind:'site',id:site.id}));
+    if (!element) return (this.workspaces?this.workspaces.visibleSites():this.store.all()).map(site=>({kind:'site',id:site.id}));
     const id=element.id;
     const path=element.kind==='site'?'/':element.path;
     const site=this.store.get(id);
