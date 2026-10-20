@@ -7,13 +7,13 @@
 
 **A Dreamweaver-inspired site manager and live FTP, FTPS & SFTP editor for Visual Studio Code.**
 
-![Version](https://img.shields.io/badge/version-0.4.0-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+![Version](https://img.shields.io/badge/version-0.5.0-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **[Quality and release gates](QUALITY_GATES.md)** · **[Get started](#getting-started) · [Site Manager](#site-manager) · [GitHub updates](#github-only-updates) · [Features](#features) · [Troubleshooting](#troubleshooting) · [Build & release](GITHUB_RELEASES.md)**
 </div>
 
 > [!IMPORTANT]
-> **GitHub-only distribution.** SiteDock does not require the Visual Studio Marketplace. Install the first official VSIX manually; subsequent GitHub Releases can be checked and installed from inside VS Code. **The source repository is public:** official VSIX files and checksums will be published directly under [gigabytegrove/vscode-sitedock/releases](https://github.com/gigabytegrove/vscode-sitedock/releases). No second repository is required. A public GitHub Release has not been published yet.
+> **GitHub-only distribution.** SiteDock does not require the Visual Studio Marketplace. Install the first official VSIX manually; subsequent GitHub Releases can be checked and installed from inside VS Code. **The source repository is public:** official VSIX files and checksums are published directly under [gigabytegrove/vscode-sitedock/releases](https://github.com/gigabytegrove/vscode-sitedock/releases). No second repository is required. SiteDock v0.4.0 is the currently published and user-tested baseline.
 
 ## Why SiteDock?
 
@@ -49,6 +49,15 @@ Right-click a remote file and select **Compare with Local File** to open VS Code
 
 For ordinary SFTP files and folders, choose **Change SFTP File Permissions** to inspect current Unix permissions and set an octal value (for example, `644` or `755`). Changes require confirmation; FTP and FTPS are not supported for this command.
 
+### SiteDock v0.5.0 development features (not yet published)
+
+- **Site groups:** label connections by client or environment directly in Site Manager, filter by group, and keep grouping across VS Code restarts without changing credentials.
+- **Site sorting:** choose smart (open/favorites first), site name, or hostname.
+- **Duplicate Site:** create an independent connection with no copied password, private key path, trusted SSH fingerprint, or permission to follow links outside the site root. Configure credentials before connecting.
+- **Find Remote Files:** bounded, cancellable filename search through existing connections. The search does not inspect file contents or traverse symbolic links; select a result to open it or reveal its directory.
+
+**v0.5.0 is development source, not a published VSIX.** It still needs official packaging, desktop UI tests and live-server verification. v0.4.0 remains the established release.
+
 ## Features
 
 | Area | Features |
@@ -82,7 +91,7 @@ The **officially packaged** extension includes its FTP/SFTP transport dependenci
 
 ### Install SiteDock
 
-1. Obtain the latest *verified official* `sitedock-vX.Y.Z.vsix` from the [GitHub Releases page](https://github.com/gigabytegrove/vscode-sitedock/releases) **once a release has been published**. Until then, use [Build from source](#build-from-source).
+1. Obtain the latest *verified official* `sitedock-vX.Y.Z.vsix` from the [GitHub Releases page](https://github.com/gigabytegrove/vscode-sitedock/releases) (v0.4.0 is available). Until then, use [Build from source](#build-from-source).
 2. In VS Code run **Extensions: Install from VSIX...** (Command Palette: `Ctrl+Shift+P` / `Cmd+Shift+P`).
 3. Select the `.vsix` file and **Reload Window** if requested.
 4. Open the SiteDock Activity Bar view and launch **Site Manager**.
@@ -212,7 +221,7 @@ Every significant feature must pass the [product acceptance and release gates](Q
 
 ## Release readiness
 
-**The repository is not yet a downloadable public GitHub Release.** SiteDock v0.4.0 has automated tests and a browser-rendered mock of Site Manager interactions, but an official `vsce` package, end-to-end desktop testing, a published GitHub Release, and live FTP/SFTP verification are outstanding. See [release acceptance gates](QUALITY_GATES.md), [release notes](RELEASE_NOTES.md), and [GitHub publishing](GITHUB_RELEASES.md). Do not distribute manually assembled development VSIX files as a final release.
+**v0.4.0 is an official GitHub Release** packaged with `@vscode/vsce`, checksum-verified, and user-tested for the in-app upgrade, FTP/FTPS/SFTP connectivity, live editing, conflict handling, and downloads. v0.5.0 additions remain unshipped development work requiring desktop, server and release verification. See [release acceptance gates](QUALITY_GATES.md), [release notes](RELEASE_NOTES.md), and [GitHub publishing](GITHUB_RELEASES.md). Do not distribute manually assembled development VSIX files as a final release.
 
 ## License and contributions
 
