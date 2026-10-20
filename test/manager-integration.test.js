@@ -11,7 +11,7 @@ test('Site Manager commands integrate with native explorer and keep existing cre
  {id:'two',name:'Stage Site',host:'stage.example.invalid',protocol:'sftp',port:22,root:'/var/www',auth:'password',user:'tester'}];
  const values=new Map([[SITES_KEY,profile]]);
  let deletedSecrets=0;
- const ctx={extensionPath:path.resolve(__dirname,'..'),globalStorageUri:{fsPath:'/tmp/sitedock-manager-tests'},subscriptions:[],
+ const ctx={extension:{packageJSON:{version:'0.3.0'}},extensionPath:path.resolve(__dirname,'..'),globalStorageUri:{fsPath:'/tmp/sitedock-manager-tests'},subscriptions:[],
  globalState:{get:(key,fallback)=>values.has(key)?structuredClone(values.get(key)):fallback,update:async(key,value)=>values.set(key,structuredClone(value))},
  secrets:{get:async()=>undefined,store:async()=>{},delete:async()=>{deletedSecrets++;}}};
  const commands=new Map(),views=new Map(),disposable=()=>({dispose(){}}),ui=[];
@@ -28,7 +28,7 @@ test('Site Manager commands integrate with native explorer and keep existing cre
  onDidChangeActiveTextEditor:disposable,activeTextEditor:null,
  showErrorMessage:message=>{throw new Error(message);},showInformationMessage:async()=>undefined,showQuickPick:async()=>undefined
  },
- workspace:{registerFileSystemProvider:disposable,onDidSaveTextDocument:disposable},
+ workspace:{getConfiguration:()=>({get:(_key,fallback)=>fallback}),onDidChangeConfiguration:disposable,registerFileSystemProvider:disposable,onDidSaveTextDocument:disposable},
  Uri:{from:x=>x,file:x=>({scheme:'file',path:x,fsPath:x})},
  commands:{registerCommand:(name,handler)=>{commands.set(name,handler);return disposable();},executeCommand:async(...args)=>{ui.push(args);}},
  FileType:{File:1,Directory:2,SymbolicLink:64},FileChangeType:{Changed:1,Created:2,Deleted:3}
