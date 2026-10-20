@@ -7,6 +7,14 @@ const path=require('node:path');
 const {ensureRuntime,prepareRuntime,loadLibrary,diagnostics,runNpm,RUNTIME}=require('../src/runtime');
 
 const makeRoot=()=>fs.mkdtemp(path.join(os.tmpdir(),'sitedock-transport-'));
+
+// The legacy installer tests must exercise the global-storage fallback even
+// after `npm install` makes real transport packages available in the checkout.
+// Production's bundled-library preference is tested separately below.
+const legacyOptions=(storageRoot,options={})=>({
+  ...options,
+  bundleRoot:path.join(storageRoot,'not-a-bundled-extension')
+});
 async function fakeInstaller(root,log=()=>{}){
   for(const [name,version] of Object.entries(RUNTIME)){
     const loc=path.join(root,'node_modules',name);
@@ -20,12 +28,12 @@ async function fakeInstaller(root,log=()=>{}){
 test('prepared libraries load without a new installer run',async()=>{
   const root=await makeRoot();let installs=0;
   try {
-    const first=await ensureRuntime(root,{installer:async(dir)=>{installs++;await fakeInstaller(dir);}});
+    const first=await ensureRuntime(root,legacyOptions(root,{installer:async(dir)=>{installs++;await fakeInstaller(dir);}}));
     assert.equal(first.installed,true);
     assert.equal(loadLibrary('basic-ftp').name,'basic-ftp');
     assert.equal(loadLibrary('ssh2-sftp-client').name,'ssh2-sftp-client');
     assert.equal(diagnostics().installed,true);
-    const second=await ensureRuntime(root,{installer:async()=>{throw new Error('installer must not rerun');}});
+    const second=await ensureRuntime(root,legacyOptions(root,{installer:async()=>{throw new Error('installer must not rerun');}}));
     assert.equal(second.installed,false);
     assert.equal(installs,1);
   }finally{await fs.rm(root,{recursive:true,force:true});}
@@ -35,7 +43,7 @@ test('simultaneous callers share one install',async()=>{
   const root=await makeRoot();let installs=0;
   try {
     const installer=async dir=>{installs++;await new Promise(resolve=>setTimeout(resolve,20));await fakeInstaller(dir);};
-    const [a,b]=await Promise.all([ensureRuntime(root,{installer}),ensureRuntime(root,{installer})]);
+    const [a,b]=await Promise.all([ensureRuntime(root,legacyOptions(root,{installer})),ensureRuntime(root,legacyOptions(root,{installer}))]);
     assert.equal(a.root,b.root);assert.equal(installs,1);
   }finally{await fs.rm(root,{recursive:true,force:true});}
 });
@@ -43,9 +51,9 @@ test('simultaneous callers share one install',async()=>{
 test('failed installation does not write a ready marker and can retry',async()=>{
   const root=await makeRoot();
   try{
-    await assert.rejects(ensureRuntime(root,{installer:async()=>{throw new Error('simulated npm failure');}}),/simulated npm failure/);
+    await assert.rejects(ensureRuntime(root,legacyOptions(root,{installer:async()=>{throw new Error('simulated npm failure');}})),/simulated npm failure/);
     await assert.rejects(fs.access(path.join(root,'transport-v2','.sitedock-runtime.json')));
-    await ensureRuntime(root,{installer:fakeInstaller});
+    await ensureRuntime(root,legacyOptions(root,{installer:fakeInstaller}));
     assert.equal(loadLibrary('basic-ftp').name,'basic-ftp');
   }finally{await fs.rm(root,{recursive:true,force:true});}
 });
@@ -53,10 +61,10 @@ test('failed installation does not write a ready marker and can retry',async()=>
 test('invalid cached library version triggers reinstall',async()=>{
   const root=await makeRoot();
   try {
-    await prepareRuntime(root,{installer:fakeInstaller});
+    await prepareRuntime(root,legacyOptions(root,{installer:fakeInstaller}));
     const p=path.join(root,'transport-v2','node_modules','basic-ftp','package.json');
     await fs.writeFile(p,JSON.stringify({name:'basic-ftp',version:'1.0.0',main:'index.js'}));
-    const result=await prepareRuntime(root,{installer:fakeInstaller});
+    const result=await prepareRuntime(root,legacyOptions(root,{installer:fakeInstaller}));
     assert.equal(result.installed,true);
   }finally{await fs.rm(root,{recursive:true,force:true});}
 });
