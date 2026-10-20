@@ -30,9 +30,16 @@ Before describing a feature as **complete**, collect evidence for all of these:
 | Media and desktop copy | Image/media preview, text override, and desktop local copy; confirm desktop edits are **not** silently uploaded |
 | File operations | Upload/download, folder transfer, progress, skip/replace, error, queued cancellation, delete and rename |
 | Link protection | Normal, broken, cyclic, and outside-root SFTP symbolic links; forbidden traversal stays blocked |
+| Batch file management | Multi-select files/folders in the native explorer; batch move/delete confirmations, collision preflight, parent/child deduplication, clear errors and activity records |
+| Staged SFTP saves | Test existing/new uploads, failure during staging, rename and rollback, chmod preservation, concurrent modification, cleanup of partial and backup files |
 | Updates in manager | Version/channel/status plainly visible; Check for Updates, Install, Release Notes, Settings work from manager |
 | Update failures | Private/no-public-releases message, digest mismatch, invalid VSIX identity, failed download, no unsafe install |
 | Update lifecycle | Release vN+1 publicly, install vN, check via UI, install verified update, reload, confirm vN+1 and saved sites |
+
+| Drag-and-drop upload | Drop files and directories from both VS Code Explorer and OS file manager onto a site and ordinary folder; verify Skip/Replace; reject symlink and file-target drops |
+| Remote clipboard | Copy files/folders within one site, paste into ordinary folder, verify bytes and layout; reject cross-site, collisions and links |
+| Multi-item downloads | Ctrl/Shift select mixed files/folders, download into one local folder with policy prompt; verify actual bytes, unchanged existing files, and failures |
+| Download retry | Induce controlled disconnect after partial local download; confirm temp cleanup, bounded reconnect and accurate final activity status; no retry for authentication or permission errors |
 
 ## Required command-line gates
 
@@ -51,14 +58,10 @@ The first gate requires no internet when Node.js is available. The packaging gat
 
 Always report: **commit SHA**, **files/areas changed**, **test command + pass/fail count**, **official VSIX build verification**, **desktop VS Code scenarios actually exercised**, **live FTP/SFTP scenarios actually exercised**, **release URL or blocker**, and **remaining limitations**. Explicitly distinguish *not run*, *mocked*, *passed locally*, and *confirmed on GitHub*.
 
-## Published baselines and v0.6.0 acceptance
+## Published baseline and v0.6.0 acceptance
 
-SiteDock v0.4.0 passed 153 automated tests, was packaged using official `@vscode/vsce`, and was publicly released with a verified SHA-256. The user independently confirmed in-app upgrade from v0.3.1, FTP/FTPS/SFTP connectivity, live editing, conflict handling and downloads. This is user confirmation on their VS Code installation; full platform coverage remains outstanding.
+v0.4.0 was built using `@vscode/vsce`, passed 153 automated tests, and published directly as a GitHub Release with verified SHA-256. The user confirmed in-app upgrade, FTP/FTPS/SFTP connectivity, live editing, conflict handling and downloads. These are user-tested on their VS Code environment; cross-platform acceptance remains outstanding.
 
-v0.5.0 was published with site grouping, sorting, duplication and filename search. v0.6.0 adds batch move/delete and staged SFTP uploads, which still require desktop and real-server acceptance.
+v0.5.0 is now publicly published under the same GitHub repository. Its enhanced site organization is release-available but has not been independently accepted across every desktop and live server environment.
 
-## Additional v0.6 acceptance gates (pending)
-
-- [ ] In desktop VS Code, Ctrl/Shift select 2+ remote files; run toolbar and context-menu batch Move/Delete; verify activity entries, collision refusal, symlink safety, and modal cancellation.
-- [ ] Against controlled SFTP servers, verify staged live save and queued uploads, permission preservation, partial upload cleanup, concurrent edit detection, failed rename rollback, and orphan-backup recovery.
-- [ ] On FTP/FTPS, confirm existing direct-write transfers still behave correctly; no unsupported atomicity claims.
+v0.6.0 is **unreleased development source**. Its native remote clipboard, batch downloads, drag-and-drop uploads and bounded download retries require desktop and live-server acceptance. Do not treat a passing mocked test as proof that an OS file-manager drop or a transient network retry works in production.
