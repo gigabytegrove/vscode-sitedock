@@ -51,6 +51,8 @@ The first gate requires no internet when Node.js is available. The packaging gat
 
 Always report: **commit SHA**, **files/areas changed**, **test command + pass/fail count**, **official VSIX build verification**, **desktop VS Code scenarios actually exercised**, **live FTP/SFTP scenarios actually exercised**, **release URL or blocker**, and **remaining limitations**. Explicitly distinguish *not run*, *mocked*, *passed locally*, and *confirmed on GitHub*.
 
-## Current known unverified work (v0.4.0)
+## Established baseline and v0.5.0 acceptance
 
-Site Manager updater controls, import/export, remote/local comparison, and SFTP chmod are wired into source with local automated tests. A separate Chromium-rendered, mocked Site Manager UI smoke test verifies button dispatch, not actual VS Code behavior. **Official VSIX packaging, desktop installation, real GitHub release detection and in-app upgrade/reload, and live-server end-to-end tests are not demonstrated.** The source repository is public but currently has no published releases. Therefore v0.4.0 remains a **release candidate source**, not a verified public release.
+SiteDock v0.4.0 passed 153 automated tests, was packaged using official `@vscode/vsce`, and was publicly released with a verified SHA-256. The user independently confirmed in-app upgrade from v0.3.1, FTP/FTPS/SFTP connectivity, live editing, conflict handling and downloads. This is user confirmation on their VS Code installation; full platform coverage remains outstanding.
+
+v0.5.0 introduces site groups, sorting, duplication without credential reuse, and bounded filename search. These are **development features only** until an official VSIX is packaged and tested in desktop VS Code against controlled remote servers.

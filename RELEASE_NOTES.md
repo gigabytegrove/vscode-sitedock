@@ -1,21 +1,19 @@
-# SiteDock v0.4.0 — Site management and safety improvements
+# SiteDock v0.5.0 — Site organization and remote filename search
 
-**Status:** Release candidate source; not yet published as a GitHub Release. Do not treat a manually packaged development VSIX as an official release.
+**Status: development source, not yet a published release.** SiteDock v0.4.0 remains the established working baseline.
 
-## Included in the source
+## New in v0.5.0
 
-- Site Manager with active-site and multiple-open-site views; persistent favorites and quick switching.
-- Version/update status and GitHub Releases actions available directly inside Site Manager.
-- **Import Sites** and **Export Sites** in Site Manager, with one-click access to portable connection-profile backups. Exports never contain passwords, SSH passphrases, SSH fingerprint trust, or private-key paths. Imported sites require credential setup and host re-verification.
-- **Compare with Local File** opens VS Code's read-only comparison view for a remote file without uploading or changing it.
-- **Change SFTP File Permissions** reads the current mode, validates octal values, and asks for confirmation before applying chmod. External SFTP links remain blocked by the canonical path boundary.
-- FTP/FTPS/SFTP connections, direct editing, media previews, transfer activity, and GitHub update code retained.
+- Persistent site groups, group filtering, and smart/name/hostname sorting in Site Manager.
+- Safe connection duplication without copying passwords, SSH fingerprints, private key paths, or external-link permissions.
+- Bounded and cancellable remote filename search, with direct file opening and folder reveal, without following symlinks.
+- Search, group and duplication buttons on Site Manager cards plus server context actions.
+- Regression tests for persistence, duplication, search limits, cancellation, security, and visible UI integration.
 
-## Verification still required before public release
+## Acceptance remaining before release
 
-- Build the distributable VSIX through the official `@vscode/vsce` package on a machine with npm access. Package must contain production transport dependencies.
-- Install the exact VSIX on a desktop VS Code test host; verify the Site Manager, import/export, diff editor, SFTP chmod, login, transfers, reload persistence, and GitHub updating.
-- Publish exactly one VSIX plus matching `.sha256` at **https://github.com/gigabytegrove/vscode-sitedock/releases**. The source repository is public; no separate release repository is needed.
-- Run the release acceptance procedures in [QUALITY_GATES.md](QUALITY_GATES.md) and [GITHUB_RELEASES.md](GITHUB_RELEASES.md).
-
-A local automated test run and a mocked webview smoke test do not substitute for real FTP/SFTP and desktop-release acceptance tests.
+- Official `@vscode/vsce` packaging and SHA-256 verification.
+- Desktop VS Code v0.4.0 → v0.5.0 upgrade and group/duplicate/search interactions.
+- Controlled FTP/FTPS/SFTP search tests, including large trees, symlinks and permission failures.
+- Verify original server profiles and secrets remain unchanged.
+- Publish only under `gigabytegrove/vscode-sitedock/releases` after acceptance. Do not use GitHub Actions.
