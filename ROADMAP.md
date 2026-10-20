@@ -1,29 +1,32 @@
 # SiteDock development roadmap
 
-## Released baseline: v0.4.0
+## Released and user verified: v0.4.0
 
-The v0.4.0 VSIX was officially packaged, SHA-256 checked and published directly on GitHub. The user verified the in-app upgrade from v0.3.1, FTP/FTPS/SFTP connectivity, live editing, conflict handling and downloads in desktop VS Code.
+The GitHub-only v0.4.0 VSIX was officially packaged and published with SHA-256 verification. In-app upgrade from v0.3.1, FTP/FTPS/SFTP connectivity, live editing, conflict handling, and downloads were successfully tested in a desktop VS Code installation. Cross-platform coverage remains incomplete.
 
-## v0.5.0 published baseline (source tag 2c15268)
+## v0.5.0 source in development — NOT RELEASED
 
-- Persistent site groups, group filtering and smart/name/hostname sorting.
-- Credential-safe duplication requiring new authentication setup.
-- Bounded and cancellable remote filename search with symlink traversal disabled.
-- Source regression tests. Desktop and live-server testing and an official release are still pending.
+- Persistent site groups, filter by group, smart/name/hostname sorting.
+- Credential-safe duplication that requires configuring new authentication.
+- Bounded, cancellable remote filename search, with no symlink traversal or file-content reads.
+- Native VS Code explorer multi-selection: bounded batch deletion and remote moves, with confirmation, collision checks, and a visible transfer log.
+- SFTP staged uploads for live saves and queued file/folder uploads; size verification, mode preservation, change checks and rollback attempts. This is not guaranteed atomic replacement without a server-specific rename extension. FTP/FTPS retain their existing direct-write behavior.
+- Source-level automated tests; official VSIX packaging, desktop and live-server tests remain necessary before release.
 
-## Next large feature milestones
+## Subsequent feature development
 
-1. Drag-and-drop uploads, multi-selection, and bulk remote copy/move/rename/delete.
-2. Atomic uploads with partial-write and interruption recovery.
-3. Durable transfer retries, restart recovery, priority, parallelism and speed/ETA.
-4. Synchronization: local/remote mappings, dry-run, exclusions, one-way/two-way policies and deletion safeguards.
-5. Deployment profiles, staging review, rollback and remote change monitoring.
-6. Advanced SSH options, keyboard accessibility, screen-reader validation, and VSIX packaging improvements.
+1. Drag-and-drop upload, safe remote copy/paste, and multi-file downloads/rename.
+2. Stronger remote concurrency detection and native server-side atomic rename when supported; investigate interrupted staging cleanup.
+3. Durable transfer retries/recovery, parallelism controls, pause/resume where supported, speed and ETA.
+4. Synchronization: local/remote folder maps, dry-run, excludes, one-way/two-way policy and deletion safeguards.
+5. Site-level deployment profiles, staging previews and rollback.
+6. Remote refresh/monitoring, connection diagnostics, SSH agent/jump host support.
+7. Accessible keyboard navigation, screen reader verification, cross-platform QA, smaller VSIX payload.
 
-No feature is called complete until its UI is visible, behavior is covered, and the release is tested on real VS Code and remote servers.
+No feature is called complete without visible UI access, automated behavior tests, release packaging and real VS Code/remote-server acceptance.
 
-## v0.6.0 work (source, not yet released)
+### v0.6.0 next batch (source-level, not yet released)
 
-- Native remote tree multi-selection for bounded move and delete with collision/root protections, confirmation and activity reporting.
-- SFTP staged uploads with size checks, permission preservation and rollback attempts. This is **not guaranteed POSIX atomic overwrite** on all SFTP servers; FTP/FTPS remain direct-write.
-- Next: drag-and-drop, safe remote copy/paste, transfer resumability and end-to-end desktop/real-server QA.
+- Same-site Copy/Paste on ordinary remote files and folders, with explicit destination confirmation, directory traversal bounds, and collision refusal.
+- Download Selected on multiple files/folders using one local destination and policy prompt; interrupted downloads remain visible as failures.
+- Still outstanding: actual Windows desktop drag-and-drop, transfer pause/resume, restart-safe retry recovery, and verification on real servers.

@@ -1,7 +1,7 @@
 {
   "name": "sitedock",
   "displayName": "SiteDock — Live FTP & SFTP",
-  "description": "Multi-site FTP, FTPS and SFTP editor with organized Site Manager, safe remote filename search, verified GitHub updates, and transfer activity.",
+  "description": "Multi-site FTP, FTPS and SFTP editor with organized Site Manager, safe remote file search, verified GitHub updates, and transfer activity.",
   "version": "0.6.0",
   "publisher": "GigabyteGrove",
   "license": "MIT",
@@ -67,9 +67,7 @@
     "onView:sitedock.managerSites",
     "onCommand:sitedock.checkUpdates",
     "onCommand:sitedock.updateSettings",
-    "onCommand:sitedock.viewReleases",
-    "onCommand:sitedock.batchMove",
-    "onCommand:sitedock.batchDelete"
+    "onCommand:sitedock.viewReleases"
   ],
   "main": "./src/extension.js",
   "extensionKind": [
@@ -347,6 +345,21 @@
         "command": "sitedock.batchDelete",
         "title": "SiteDock: Delete Selected Remote Items",
         "icon": "$(trash)"
+      },
+      {
+        "command": "sitedock.copyRemote",
+        "title": "SiteDock: Copy Remote Items",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "sitedock.pasteRemote",
+        "title": "SiteDock: Paste Remote Items",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "sitedock.downloadSelected",
+        "title": "SiteDock: Download Selected Remote Items",
+        "icon": "$(cloud-download)"
       }
     ],
     "menus": {
@@ -425,6 +438,21 @@
           "command": "sitedock.batchDelete",
           "when": "view == sitedock.sites",
           "group": "navigation@7"
+        },
+        {
+          "command": "sitedock.copyRemote",
+          "when": "view == sitedock.sites",
+          "group": "navigation@8"
+        },
+        {
+          "command": "sitedock.pasteRemote",
+          "when": "view == sitedock.sites",
+          "group": "navigation@9"
+        },
+        {
+          "command": "sitedock.downloadSelected",
+          "when": "view == sitedock.sites",
+          "group": "navigation@10"
         }
       ],
       "view/item/context": [
@@ -617,6 +645,21 @@
           "command": "sitedock.batchDelete",
           "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.directory || viewItem == sitedock.fileLink || viewItem == sitedock.directoryLink)",
           "group": "5_danger@2"
+        },
+        {
+          "command": "sitedock.copyRemote",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.directory)",
+          "group": "3_transfer@5"
+        },
+        {
+          "command": "sitedock.pasteRemote",
+          "when": "view == sitedock.sites && (viewItem == sitedock.site || viewItem == sitedock.directory)",
+          "group": "3_transfer@6"
+        },
+        {
+          "command": "sitedock.downloadSelected",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.directory)",
+          "group": "3_transfer@7"
         }
       ]
     },
@@ -645,7 +688,7 @@
           "type": "string",
           "default": "gigabytegrove/vscode-sitedock",
           "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*/[-A-Za-z0-9_.]+$",
-          "description": "Public GitHub Releases repository for SiteDock (owner/repo), normally gigabytegrove/vscode-sitedock."
+          "description": "Public GitHub repository containing SiteDock releases (owner/repo). Official releases are published at gigabytegrove/vscode-sitedock; no separate repository or extension credentials required."
         },
         "sitedock.updates.checkIntervalHours": {
           "type": "number",
@@ -664,7 +707,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/staged-upload.js && node --check src/batch-operations.js && node --check src/search-remote.js && node --check src/site-profiles.js && node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
+    "check": "node --check src/staged-upload.js && node --check src/remote-clipboard.js && node --check src/batch-operations.js && node --check src/search-remote.js && node --check src/site-profiles.js && node --check src/drop-uploads.js && node --check src/transfer-retry.js && node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
     "package": "vsce package --allow-missing-repository",
     "package:all": "npm run check && npm run package",
     "release:build": "node scripts/build-release.js",
