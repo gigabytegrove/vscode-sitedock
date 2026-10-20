@@ -17,6 +17,7 @@ const {ensureRuntime,diagnostics}=require('./runtime');
 const manifest=require('../package.json');
 const {openRemoteFile,openInDesktopApp}=require('./opening');
 const {createUpdater}=require('./updates');
+const {exportProfiles,previewImport,MAX_BYTES}=require('./site-profiles');
 
 let disposeIO;
 function uriFor(node) {return vscode.Uri.from({scheme:'sitedock',authority:node.id,path:node.kind==='site'?'/':node.path});}
@@ -131,10 +132,41 @@ async function activate(context) {
     closeOthers:id=>workspaces.closeOthers(id),closeAll:()=>workspaces.closeAll(),
     mode:value=>workspaces.setMode(value),scope:value=>workspaces.setScope(value),
     updateStatus:()=>updater.status(),onUpdateChange:listener=>updater.onStatusChange(listener),
+    exportSites:()=>vscode.commands.executeCommand('sitedock.exportSites'),
+    importSites:()=>vscode.commands.executeCommand('sitedock.importSites'),
     checkUpdate:()=>updater.check({manual:true,prompt:false}),
     installUpdate:()=>updater.installAvailable(),
     updateSettings:()=>vscode.commands.executeCommand('workbench.action.openSettings','sitedock.updates'),
     viewReleases:()=>vscode.commands.executeCommand('sitedock.viewReleases')
+  });
+  command('sitedock.exportSites',async()=>{
+    const sites=store.all();
+    if(!sites.length){await vscode.window.showInformationMessage('SiteDock has no saved sites to export.');return;}
+    const choice=await vscode.window.showWarningMessage(
+      `Export ${sites.length} SiteDock site profile(s)?`,
+      {modal:true,detail:'Export includes hostnames, usernames and remote directory paths, but NEVER passwords, key files, passphrases or trusted SSH fingerprints. Keep the exported JSON private.'},
+      'Export Profiles');
+    if(choice!=='Export Profiles')return;
+    const target=await vscode.window.showSaveDialog({title:'Export SiteDock connections (no secrets)',saveLabel:'Export',filters:{'JSON files':['json']},defaultUri:vscode.Uri.file(require('node:path').join(require('node:os').homedir(),'sitedock-sites.json'))});
+    if(!target)return;
+    await vscode.workspace.fs.writeFile(target,Buffer.from(exportProfiles(sites),'utf8'));
+    await vscode.window.showInformationMessage(`Exported ${sites.length} connection profiles. Credentials were excluded.`);
+  });
+  command('sitedock.importSites',async()=>{
+    const selected=await vscode.window.showOpenDialog({title:'Import SiteDock connections (no passwords)',canSelectFiles:true,canSelectFolders:false,canSelectMany:false,filters:{'SiteDock JSON':['json']}});
+    if(!selected?.length)return;
+    const stat=await vscode.workspace.fs.stat(selected[0]);
+    if(stat.size>MAX_BYTES)throw new Error('Profile import exceeds the 1 MB limit.');
+    const plan=previewImport(await vscode.workspace.fs.readFile(selected[0]),store.all());
+    if(!plan.imports.length){await vscode.window.showInformationMessage(`No new sites to import (${plan.skipped} already saved).`);return;}
+    const choice=await vscode.window.showWarningMessage(
+      `Import ${plan.imports.length} SiteDock site(s)?`,
+      {modal:true,detail:`${plan.skipped} duplicate(s) skipped. Passwords, SSH keys, fingerprints and external-link permissions will NOT be imported. Edit each site and verify its credentials and SSH host identity before connecting.`},
+      'Import Profiles');
+    if(choice!=='Import Profiles')return;
+    await store.importProfiles(plan.imports);
+    await workspaces.sync();refreshViews();
+    await vscode.window.showInformationMessage(`Imported ${plan.imports.length} site(s). Configure credentials using Edit Server before connecting.`);
   });
   command('sitedock.manager',()=>managerPanel.open());
   command('sitedock.openSite',async node=>{const site=await getSelected(node);if(site)await openSite(site.id);});
@@ -238,6 +270,32 @@ async function activate(context) {
   command('sitedock.open',async node=>{
     if(!node || node.kind!=='entry' || node.type==='directory')return;
     await openRemoteFile(vscode,uriFor(node),node.name || posix.basename(node.path));
+  });
+  command('sitedock.permissions',async node=>{
+    if(!node||node.kind!=='entry'||!['file','directory'].includes(node.type)||node.symlink||node.externalBlocked)
+      throw new Error('Choose a regular SFTP file or folder to edit permissions.');
+    const site=store.get(node.id);
+    if(!site)throw new Error('Site no longer exists.');
+    if(site.protocol!=='sftp')throw new Error('Unix permission editing requires an SFTP connection.');
+    const current=await doRemote(site.id,'getPermissions',node.path);
+    const octal=current.toString(8).padStart(3,'0');
+    const answer=await vscode.window.showInputBox({title:`Change permissions · ${node.name}`,prompt:'Enter Unix permissions as octal, e.g. 644 or 755',value:octal,
+      validateInput:input=>/^[0-7]{3,4}$/.test(input)?null:'Use 3 or 4 octal digits (0–7).'});
+    if(answer===undefined||answer===octal)return;
+    if(!/^[0-7]{3,4}$/.test(answer))throw new Error('Use 3 or 4 octal digits (0–7).');
+    const accepted=await vscode.window.showWarningMessage(`Change permissions on ${site.name}/${node.name} from ${octal} to ${answer}?`,
+      {modal:true,detail:'This changes live permissions on the remote server. Incorrect settings may block website access or expose files.'},'Change Permissions');
+    if(accepted!=='Change Permissions')return;
+    await doRemote(site.id,'setPermissions',node.path,Number.parseInt(answer,8));
+    refresh();
+    await vscode.window.showInformationMessage(`Permissions updated to ${answer} on ${site.name}/${node.name}.`);
+  });
+  command('sitedock.compareLocal',async node=>{
+    if(!node||node.kind!=='entry'||node.type==='directory'||node.broken||node.externalBlocked)throw new Error('Choose an accessible remote file to compare.');
+    const local=await vscode.window.showOpenDialog({title:`Compare ${node.name} with a local file`,canSelectFiles:true,canSelectFolders:false,canSelectMany:false});
+    if(!local?.length)return;
+    const site=store.get(node.id);if(!site)throw new Error('Site no longer exists.');
+    await vscode.commands.executeCommand('vscode.diff',local[0],uriFor(node),`${site.name}: Local ↔ Remote — ${node.name}`);
   });
   command('sitedock.openAsText',async node=>{
     if(!node || node.kind!=='entry' || node.type==='directory')return;

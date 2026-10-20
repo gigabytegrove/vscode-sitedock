@@ -16,9 +16,9 @@ function createManagerPanel(vscode,context,workspaces,store,actions){
   async function handle(message){
     if(!message||typeof message!=='object'||typeof message.type!=='string')return;
     const commands=new Set(['open','focus','close','favorite','edit','test','window','openMany','closeOthers','mode','scope','add','closeAll',
-      'checkUpdate','installUpdate','updateSettings','viewReleases']);
+      'checkUpdate','installUpdate','updateSettings','viewReleases','exportSites','importSites']);
     if(!commands.has(message.type))return;
-    if(['checkUpdate','installUpdate','updateSettings','viewReleases'].includes(message.type)){
+    if(['checkUpdate','installUpdate','updateSettings','viewReleases','exportSites','importSites'].includes(message.type)){
       if(typeof actions[message.type]!=='function')throw new Error('Update action unavailable.');
       await actions[message.type]();return;
     }

@@ -1,8 +1,8 @@
 {
   "name": "sitedock",
-  "displayName": "SiteDock — Live FTP & SFTP",
+  "displayName": "SiteDock \u2014 Live FTP & SFTP",
   "description": "Multi-site FTP, FTPS and SFTP editor with focused site management, secure GitHub Releases updates, media previews, and transfer activity.",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "publisher": "GigabyteGrove",
   "license": "MIT",
   "engines": {
@@ -295,6 +295,26 @@
         "command": "sitedock.viewReleases",
         "title": "SiteDock: View GitHub Releases",
         "icon": "$(link-external)"
+      },
+      {
+        "command": "sitedock.importSites",
+        "title": "SiteDock: Import Site Profiles",
+        "icon": "$(file-symlink-file)"
+      },
+      {
+        "command": "sitedock.exportSites",
+        "title": "SiteDock: Export Site Profiles",
+        "icon": "$(export)"
+      },
+      {
+        "command": "sitedock.compareLocal",
+        "title": "SiteDock: Compare with Local File",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "sitedock.permissions",
+        "title": "SiteDock: Change SFTP File Permissions",
+        "icon": "$(lock)"
       }
     ],
     "menus": {
@@ -341,6 +361,16 @@
         },
         {
           "command": "sitedock.updateSettings",
+          "when": "view == sitedock.managerSites",
+          "group": "navigation@4"
+        },
+        {
+          "command": "sitedock.importSites",
+          "when": "view == sitedock.managerSites",
+          "group": "navigation@3"
+        },
+        {
+          "command": "sitedock.exportSites",
           "when": "view == sitedock.managerSites",
           "group": "navigation@4"
         }
@@ -485,11 +515,21 @@
           "command": "sitedock.closeSite",
           "when": "view == sitedock.sites && viewItem == sitedock.site",
           "group": "0_open@1"
+        },
+        {
+          "command": "sitedock.compareLocal",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.fileLink)",
+          "group": "0_open@4"
+        },
+        {
+          "command": "sitedock.permissions",
+          "when": "view == sitedock.sites && (viewItem == sitedock.file || viewItem == sitedock.directory)",
+          "group": "4_manage@3"
         }
       ]
     },
     "configuration": {
-      "title": "SiteDock · GitHub Updates",
+      "title": "SiteDock \u00b7 GitHub Updates",
       "properties": {
         "sitedock.updates.enabled": {
           "type": "boolean",
@@ -520,7 +560,7 @@
           "default": 12,
           "minimum": 1,
           "maximum": 168,
-          "description": "Minimum time between automatic update checks, in hours (1–168)."
+          "description": "Minimum time between automatic update checks, in hours (1\u2013168)."
         },
         "sitedock.updates.autoInstall": {
           "type": "boolean",
@@ -532,7 +572,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
+    "check": "node --check src/site-profiles.js && node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
     "package": "vsce package --allow-missing-repository",
     "package:all": "npm run check && npm run package",
     "release:build": "node scripts/build-release.js",

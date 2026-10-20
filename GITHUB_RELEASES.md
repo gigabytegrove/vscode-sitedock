@@ -1,6 +1,6 @@
 # SiteDock GitHub-only distribution and updates
 
-This is the official release procedure for SiteDock starting with **v0.3.0**. No Marketplace publisher, Azure DevOps, GitHub Actions runner, GitHub-hosted CI build or extension-side GitHub credentials are required.
+This is the official release procedure for SiteDock, including **v0.4.0**. No Marketplace publisher, Azure DevOps, GitHub Actions runner, GitHub-hosted CI build or extension-side GitHub credentials are required.
 
 ## 1. Select a PUBLIC release repository
 
@@ -31,7 +31,7 @@ npm install --include=dev --no-audit --no-fund
 npm run check
 ```
 
-Before releasing, increment the `version` in `package.json`, commit the release to your source repository and prepare `RELEASE_NOTES.md`. The GitHub release tag must use `v` followed by precisely the same version (for example `v0.3.0` or `v0.3.1-beta.1`). `-beta` releases must be flagged as **pre-releases** when published.
+Before releasing, increment the `version` in `package.json`, commit the release to your source repository and prepare `RELEASE_NOTES.md`. The GitHub release tag must use `v` followed by precisely the same version (for example `v0.4.0` or `v0.4.1-beta.1`). `-beta` releases must be flagged as **pre-releases** when published.
 
 **Do not package with the legacy `scripts/build_vsix.py` tool.** Distribution builds must use `@vscode/vsce` through the local official build script.
 
@@ -51,21 +51,15 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-GitHub-Release.p
 The commands validate source/tests, use the installed official `@vscode/vsce`, inspect `extension/package.json` inside the VSIX, and generate:
 
 ```text
-dist/sitedock-v0.3.0.vsix
-dist/sitedock-v0.3.0.vsix.sha256
+dist/sitedock-v0.4.0.vsix
+dist/sitedock-v0.4.0.vsix.sha256
 ```
 
 The checksum file is in conventional `sha256sum` format: `<sha256>  <exact VSIX filename>`. The SHA-256 and extension identity MUST be verified before release publication.
 
 ## 5. Publish the release (manual, no CI)
 
-**Confirm your destination repository is PUBLIC and initialized with a default branch.** The publication script refuses private repositories. It will **not** create a new repository or change repository privacy. To intentionally create a separate public binary-only destination on Windows, run:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Public-Releases.ps1 -Create -Repository gigabytegrove/sitedock-releases
-```
-
-This bootstrap is opt-in and refuses to modify an existing private repository.
+**Confirm your destination repository is PUBLIC and initialized with a `main` branch.** The publication script refuses private repositories. It will **not** create a new repository or change repository privacy.
 
 ```bash
 npm run release:publish -- --repo gigabytegrove/vscode-sitedock
@@ -73,7 +67,7 @@ npm run release:publish -- --repo gigabytegrove/vscode-sitedock
 
 For a separate public release repository replace `--repo` with its actual owner/repo.
 
-The publisher invokes `gh release create` targeting the destination's **actual default branch**, includes **both** artifacts, marks pre-release versions correctly, includes `RELEASE_NOTES.md`, and refuses to publish if checksum, VSIX identity, or destination visibility validation fails. `gh release create` creates a version tag at the release destination's `main` if the tag does not exist. For traceable source history, tag the exact commit in the source repository separately.
+The publisher invokes `gh release create`, includes **both** artifacts, marks pre-release versions correctly, includes `RELEASE_NOTES.md`, and refuses to publish if checksum, VSIX identity, or destination visibility validation fails. `gh release create` creates a version tag at the release destination's `main` if the tag does not exist. For traceable source history, tag the exact commit in the source repository separately.
 
 PowerShell build-and-publish in one command:
 
@@ -81,7 +75,7 @@ PowerShell build-and-publish in one command:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-GitHub-Release.ps1 -Publish -Repository gigabytegrove/sitedock-releases
 ```
 
-If you want to create a new public distribution repository, build and publish in one command, use `Setup-Public-Releases.ps1 -Create -BuildAndPublish` instead. The release URL should be of the form `https://github.com/OWNER/REPO/releases/tag/v0.3.0`. Check that it displays one VSIX and its matching `.sha256` checksum. **Do not upload multiple differently named SiteDock VSIX files to one release**: the updater deliberately rejects ambiguous artifacts.
+The release URL should be of the form `https://github.com/OWNER/REPO/releases/tag/v0.4.0`. Check that it displays one VSIX and its matching `.sha256` checksum. **Do not upload multiple differently named SiteDock VSIX files to one release**: the updater deliberately rejects ambiguous artifacts.
 
 ## 6. Configure initial VSIX clients
 

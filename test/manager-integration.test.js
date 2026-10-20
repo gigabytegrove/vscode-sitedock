@@ -15,6 +15,7 @@ test('Site Manager commands integrate with native explorer and keep existing cre
  globalState:{get:(key,fallback)=>values.has(key)?structuredClone(values.get(key)):fallback,update:async(key,value)=>values.set(key,structuredClone(value))},
  secrets:{get:async()=>undefined,store:async()=>{},delete:async()=>{deletedSecrets++;}}};
  const commands=new Map(),views=new Map(),disposable=()=>({dispose(){}}),ui=[];
+ let backup=null,importData=null;
  const fake={
  EventEmitter:class{constructor(){this.event=()=>disposable();}fire(){}dispose(){}},
  TreeItem:class{constructor(label,collapsibleState){this.label=label;this.collapsibleState=collapsibleState;}},
@@ -26,9 +27,13 @@ test('Site Manager commands integrate with native explorer and keep existing cre
  createStatusBarItem:()=>({text:'',show(){},hide(){},dispose(){}}),
  createWebviewPanel:()=>({webview:{cspSource:'vscode-resource:',html:'',postMessage:async()=>true,onDidReceiveMessage:disposable},onDidDispose:disposable,reveal(){},dispose(){}}),
  onDidChangeActiveTextEditor:disposable,activeTextEditor:null,
- showErrorMessage:message=>{throw new Error(message);},showInformationMessage:async()=>undefined,showQuickPick:async()=>undefined
+ showErrorMessage:message=>{throw new Error(message);},showInformationMessage:async()=>undefined,showQuickPick:async()=>undefined,
+ showWarningMessage:async message=>String(message).startsWith('Export')?'Export Profiles':String(message).startsWith('Import')?'Import Profiles':undefined,
+ showSaveDialog:async()=>({scheme:'file',path:'/safe/export.json'}),
+ showOpenDialog:async opts=>opts.title.startsWith('Import')?[{scheme:'file',path:'/safe/import.json'}]:[{scheme:'file',path:'/safe/local.css'}]
  },
- workspace:{getConfiguration:()=>({get:(_key,fallback)=>fallback}),onDidChangeConfiguration:disposable,registerFileSystemProvider:disposable,onDidSaveTextDocument:disposable},
+ workspace:{getConfiguration:()=>({get:(_key,fallback)=>fallback}),onDidChangeConfiguration:disposable,registerFileSystemProvider:disposable,onDidSaveTextDocument:disposable,
+ fs:{writeFile:async(_uri,buf)=>{backup=buf;},stat:async()=>({size:importData?.byteLength||0}),readFile:async()=>importData}},
  Uri:{from:x=>x,file:x=>({scheme:'file',path:x,fsPath:x})},
  commands:{registerCommand:(name,handler)=>{commands.set(name,handler);return disposable();},executeCommand:async(...args)=>{ui.push(args);}},
  FileType:{File:1,Directory:2,SymbolicLink:64},FileChangeType:{Changed:1,Created:2,Deleted:3}
@@ -54,6 +59,20 @@ test('Site Manager commands integrate with native explorer and keep existing cre
    assert.equal(values.get(SITES_KEY).length,2);
    await commands.get('sitedock.setViewMode')(); // No pick => no change
    assert.ok(ui.some(x=>x[0]==='sitedock.sites.focus'));
+   await commands.get('sitedock.compareLocal')({kind:'entry',id:'one',name:'style.css',path:'/style.css',type:'file'});
+   const diff=ui.find(call=>call[0]==='vscode.diff');
+   assert.ok(diff,'Compare with Local File must invoke VS Code diff');
+   assert.equal(diff[1].path,'/safe/local.css');assert.equal(diff[2].scheme,'sitedock');
+   assert.equal(diff[2].authority,'one');
+   await commands.get('sitedock.exportSites')();
+   assert.ok(backup instanceof Uint8Array);
+   const exported=JSON.parse(backup.toString('utf8'));
+   assert.equal(exported.sites.length,2);
+   assert.equal(Object.hasOwn(exported.sites[0],'fingerprint'),false);
+   importData=Buffer.from(JSON.stringify({...exported,sites:[{...exported.sites[0],host:'new.example.invalid'}]}));
+   await commands.get('sitedock.importSites')();
+   assert.equal(values.get(SITES_KEY).length,3);
+   assert.equal(deletedSecrets,0,'import/export must not alter credentials');
    await extension.deactivate();
  }finally{Module._load=original;}
 });
