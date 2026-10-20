@@ -7,7 +7,7 @@
 
 **A Dreamweaver-inspired site manager and live FTP, FTPS & SFTP editor for Visual Studio Code.**
 
-![Version](https://img.shields.io/badge/version-0.5.0-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+![Version](https://img.shields.io/badge/version-0.6.0-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **[Quality and release gates](QUALITY_GATES.md)** · **[Get started](#getting-started) · [Site Manager](#site-manager) · [GitHub updates](#github-only-updates) · [Features](#features) · [Troubleshooting](#troubleshooting) · [Build & release](GITHUB_RELEASES.md)**
 </div>
@@ -49,14 +49,14 @@ Right-click a remote file and select **Compare with Local File** to open VS Code
 
 For ordinary SFTP files and folders, choose **Change SFTP File Permissions** to inspect current Unix permissions and set an octal value (for example, `644` or `755`). Changes require confirmation; FTP and FTPS are not supported for this command.
 
-### SiteDock v0.5.0 development features (not yet published)
+### SiteDock v0.5.0 published; v0.6.0 development
 
 - **Site groups:** label connections by client or environment directly in Site Manager, filter by group, and keep grouping across VS Code restarts without changing credentials.
 - **Site sorting:** choose smart (open/favorites first), site name, or hostname.
 - **Duplicate Site:** create an independent connection with no copied password, private key path, trusted SSH fingerprint, or permission to follow links outside the site root. Configure credentials before connecting.
 - **Find Remote Files:** bounded, cancellable filename search through existing connections. The search does not inspect file contents or traverse symbolic links; select a result to open it or reveal its directory.
 
-**v0.5.0 is development source, not a published VSIX.** It still needs official packaging, desktop UI tests and live-server verification. v0.4.0 remains the established release.
+**v0.5.0 was published** from the site grouping, duplication and filename-search baseline. **v0.6.0 remains development source**, with batch management and staged SFTP uploading pending desktop/real-server acceptance.
 
 ## Features
 
@@ -233,7 +233,7 @@ MIT licensed; third-party FTP/SFTP libraries retain their own license terms. Rep
 
 </div>
 
-## v0.5.0 — Extended file operations (development, not released)
+## v0.6.0 — Extended file operations (development, not released)
 
 - My Servers explorer supports native Ctrl/Shift multi-selection and visible **Move Selected Remote Items** / **Delete Selected Remote Items** toolbar and context-menu actions. Operations are bounded to one site and at most 100 selected entries; moves refuse collisions, missing destinations, and folder-descendant moves. Recursive deletion requires confirmation, and all actions are journaled in Transfers & Activity.
 - SFTP live saves and queued file/folder uploads now stage under randomized sibling filenames, check uploaded byte counts, retain Unix file permissions when replacing an existing file, detect metadata changes and attempt rollback after a failed rename. FTP/FTPS still use their prior upload behavior.

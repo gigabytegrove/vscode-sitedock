@@ -51,13 +51,13 @@ The first gate requires no internet when Node.js is available. The packaging gat
 
 Always report: **commit SHA**, **files/areas changed**, **test command + pass/fail count**, **official VSIX build verification**, **desktop VS Code scenarios actually exercised**, **live FTP/SFTP scenarios actually exercised**, **release URL or blocker**, and **remaining limitations**. Explicitly distinguish *not run*, *mocked*, *passed locally*, and *confirmed on GitHub*.
 
-## Established baseline and v0.5.0 acceptance
+## Published baselines and v0.6.0 acceptance
 
 SiteDock v0.4.0 passed 153 automated tests, was packaged using official `@vscode/vsce`, and was publicly released with a verified SHA-256. The user independently confirmed in-app upgrade from v0.3.1, FTP/FTPS/SFTP connectivity, live editing, conflict handling and downloads. This is user confirmation on their VS Code installation; full platform coverage remains outstanding.
 
-v0.5.0 introduces site groups, sorting, duplication without credential reuse, and bounded filename search. These are **development features only** until an official VSIX is packaged and tested in desktop VS Code against controlled remote servers.
+v0.5.0 was published with site grouping, sorting, duplication and filename search. v0.6.0 adds batch move/delete and staged SFTP uploads, which still require desktop and real-server acceptance.
 
-## Additional v0.5 acceptance gates (pending)
+## Additional v0.6 acceptance gates (pending)
 
 - [ ] In desktop VS Code, Ctrl/Shift select 2+ remote files; run toolbar and context-menu batch Move/Delete; verify activity entries, collision refusal, symlink safety, and modal cancellation.
 - [ ] Against controlled SFTP servers, verify staged live save and queued uploads, permission preservation, partial upload cleanup, concurrent edit detection, failed rename rollback, and orphan-backup recovery.

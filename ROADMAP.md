@@ -4,7 +4,7 @@
 
 The v0.4.0 VSIX was officially packaged, SHA-256 checked and published directly on GitHub. The user verified the in-app upgrade from v0.3.1, FTP/FTPS/SFTP connectivity, live editing, conflict handling and downloads in desktop VS Code.
 
-## v0.5.0 development — not released
+## v0.5.0 published baseline (source tag 2c15268)
 
 - Persistent site groups, group filtering and smart/name/hostname sorting.
 - Credential-safe duplication requiring new authentication setup.
@@ -22,7 +22,7 @@ The v0.4.0 VSIX was officially packaged, SHA-256 checked and published directly 
 
 No feature is called complete until its UI is visible, behavior is covered, and the release is tested on real VS Code and remote servers.
 
-## Additional v0.5.0 work (source, not yet released)
+## v0.6.0 work (source, not yet released)
 
 - Native remote tree multi-selection for bounded move and delete with collision/root protections, confirmation and activity reporting.
 - SFTP staged uploads with size checks, permission preservation and rollback attempts. This is **not guaranteed POSIX atomic overwrite** on all SFTP servers; FTP/FTPS remain direct-write.
