@@ -49,7 +49,7 @@ Right-click a remote file and select **Compare with Local File** to open VS Code
 
 For ordinary SFTP files and folders, choose **Change SFTP File Permissions** to inspect current Unix permissions and set an octal value (for example, `644` or `755`). Changes require confirmation; FTP and FTPS are not supported for this command.
 
-### SiteDock v0.5.0 development features (not yet published)
+### SiteDock v0.5.0 enhancements (published)
 
 - **Site groups:** group connections by environment/client directly in Site Manager, filter by group, and keep the grouping across VS Code restarts without altering server credentials.
 - **Site sorting:** switch between smart (open/favorites first), alphabetical name, or hostname order.
@@ -60,7 +60,7 @@ For ordinary SFTP files and folders, choose **Change SFTP File Permissions** to 
 
 **Safer SFTP uploads (v0.5 development):** SFTP editing and queued uploads use same-directory staging, byte-count verification, and a previous-version backup with rollback where possible. Existing Unix permissions are preserved. On servers without an atomic replace extension there can still be a brief gap during rename; network/power failure can leave a `.sitedock-*.backup` for recovery. This must be tested against a real SFTP server before release. FTP/FTPS still use direct writes.
 
-**v0.5.0 is a development source update.** These additions require official packaging, desktop UI acceptance, and live-server checks before GitHub release. v0.4.0 remains the latest established release.
+**v0.5.0 is published on GitHub.** Its new site organization and search workflows still require full live-server and desktop acceptance. **v0.6.0 is the current unreleased development version.**
 
 ## Features
 
@@ -225,7 +225,7 @@ Every significant feature must pass the [product acceptance and release gates](Q
 
 ## Release readiness
 
-**v0.4.0 is an official GitHub Release**, packaged with `@vscode/vsce`, checksum-verified, and user-tested for the in-app upgrade, FTP/FTPS/SFTP connections, live editing, conflict handling, and downloads. The v0.5.0 enhancements described above remain unshipped source work; their desktop, live-server, and packaging acceptance is still outstanding. See [release acceptance gates](QUALITY_GATES.md), [release notes](RELEASE_NOTES.md), and [GitHub publishing](GITHUB_RELEASES.md). Do not distribute manually assembled development VSIX files as a final release.
+**v0.4.0 is an official GitHub Release**, packaged with `@vscode/vsce`, checksum-verified, and user-tested for the in-app upgrade, FTP/FTPS/SFTP connections, live editing, conflict handling, and downloads. v0.5.0 is published on GitHub. v0.6.0 remains unreleased development source; official packaging, desktop/UI validation, and live-server acceptance are outstanding. See [release acceptance gates](QUALITY_GATES.md), [release notes](RELEASE_NOTES.md), and [GitHub publishing](GITHUB_RELEASES.md). Do not distribute manually assembled development VSIX files as a final release.
 
 ## License and contributions
 
@@ -242,3 +242,9 @@ MIT licensed; third-party FTP/SFTP libraries retain their own license terms. Rep
 Use Ctrl/Shift in **My Servers** to select ordinary remote files and folders. **Copy Remote Items** holds their paths in SiteDock memory only; **Paste Remote Items** on an ordinary folder or site root copies them within the same remote site without replacing existing files. Selected folders are recursively traversed with a 3,000-entry and 32-level bound; symbolic and external links are not followed. Copies stream through an isolated temporary local file, which is removed when each operation completes or fails. Failed jobs are visible in **Transfers & Activity**.
 
 **Download Selected Remote Items** prompts once for a local destination and a Skip or Replace policy; it preflights all selected items before queueing, caps the combined transfer plan, and preserves their folder structures. Copies and downloads are queued sequentially. These features require live VS Code and server acceptance testing before v0.6.0 is published.
+
+### Drag-and-drop uploads (v0.6.0 development)
+
+Drag local files and folders onto an ordinary remote folder or site root in **My Servers**. SiteDock asks whether to replace or skip existing remote files and tracks transfers in **Transfers & Activity**. Dropping onto files, symlinks, or blank space is rejected. Local symlinks are skipped, directory plans are capped at 3,000 entries/32 levels, and in-memory operating-system drops have 16 MiB per-file and 32 MiB total limits. Use **Upload Files** for larger in-memory drops.
+
+Downloads receive up to two additional attempts only after transient network failures, with visible retry messages and bounded delays. Auth, permission, conflict and destructive operations are not automatically replayed; interrupted work after VS Code restarts still needs manual intervention. These operations need actual desktop/live-server acceptance before v0.6.0 is released.

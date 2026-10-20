@@ -4,7 +4,7 @@
 
 The GitHub-only v0.4.0 VSIX was officially packaged and published with SHA-256 verification. In-app upgrade from v0.3.1, FTP/FTPS/SFTP connectivity, live editing, conflict handling, and downloads were successfully tested in a desktop VS Code installation. Cross-platform coverage remains incomplete.
 
-## v0.5.0 source in development — NOT RELEASED
+## v0.5.0 published source / v0.6.0 development
 
 - Persistent site groups, filter by group, smart/name/hostname sorting.
 - Credential-safe duplication that requires configuring new authentication.
@@ -15,7 +15,7 @@ The GitHub-only v0.4.0 VSIX was officially packaged and published with SHA-256 v
 
 ## Subsequent feature development
 
-1. Drag-and-drop upload, safe remote copy/paste, and multi-file downloads/rename.
+1. Remote copy/paste, multi-file downloads and drag-and-drop upload are now in v0.6.0 source; batch rename remains outstanding.
 2. Stronger remote concurrency detection and native server-side atomic rename when supported; investigate interrupted staging cleanup.
 3. Durable transfer retries/recovery, parallelism controls, pause/resume where supported, speed and ETA.
 4. Synchronization: local/remote folder maps, dry-run, excludes, one-way/two-way policy and deletion safeguards.
@@ -29,4 +29,5 @@ No feature is called complete without visible UI access, automated behavior test
 
 - Same-site Copy/Paste on ordinary remote files and folders, with explicit destination confirmation, directory traversal bounds, and collision refusal.
 - Download Selected on multiple files/folders using one local destination and policy prompt; interrupted downloads remain visible as failures.
-- Still outstanding: actual Windows desktop drag-and-drop, transfer pause/resume, restart-safe retry recovery, and verification on real servers.
+- Newly implemented in v0.6.0 source: native tree drop of local files/folders and bounded automatic retry of transient downloads only.
+- Still outstanding: Windows/macOS/Linux drag-and-drop acceptance, true pause/resume, restart-safe transfer recovery, speed/ETA, and real-server verification.
