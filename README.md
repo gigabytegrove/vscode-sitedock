@@ -9,7 +9,7 @@
 
 ![Version](https://img.shields.io/badge/version-0.3.1-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**[Get started](#getting-started) · [Site Manager](#site-manager) · [GitHub updates](#github-only-updates) · [Features](#features) · [Troubleshooting](#troubleshooting) · [Build & release](GITHUB_RELEASES.md)**
+**[Quality and release gates](QUALITY_GATES.md)** · **[Get started](#getting-started) · [Site Manager](#site-manager) · [GitHub updates](#github-only-updates) · [Features](#features) · [Troubleshooting](#troubleshooting) · [Build & release](GITHUB_RELEASES.md)**
 </div>
 
 > [!IMPORTANT]
@@ -197,6 +197,10 @@ scripts/          Release creation, validation and local publishing
   publish-release.js
 test/             Automated Node.js tests
 ```
+
+## Release quality and verification
+
+Every significant feature must pass the [product acceptance and release gates](QUALITY_GATES.md). Passing unit tests alone does not establish a working VS Code user experience or a published, installable release.
 
 ## License and contributions
 

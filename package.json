@@ -1,6 +1,6 @@
 {
   "name": "sitedock",
-  "displayName": "SiteDock \u2014 Live FTP & SFTP",
+  "displayName": "SiteDock — Live FTP & SFTP",
   "description": "Multi-site FTP, FTPS and SFTP editor with focused site management, secure GitHub Releases updates, media previews, and transfer activity.",
   "version": "0.3.1",
   "publisher": "GigabyteGrove",
@@ -489,7 +489,7 @@
       ]
     },
     "configuration": {
-      "title": "SiteDock \u00b7 GitHub Updates",
+      "title": "SiteDock · GitHub Updates",
       "properties": {
         "sitedock.updates.enabled": {
           "type": "boolean",
@@ -520,7 +520,7 @@
           "default": 12,
           "minimum": 1,
           "maximum": 168,
-          "description": "Minimum time between automatic update checks, in hours (1\u2013168)."
+          "description": "Minimum time between automatic update checks, in hours (1–168)."
         },
         "sitedock.updates.autoInstall": {
           "type": "boolean",
@@ -537,7 +537,8 @@
     "package:all": "npm run check && npm run package",
     "release:build": "node scripts/build-release.js",
     "release:publish": "node scripts/publish-release.js",
-    "release:verify": "node scripts/verify-release.js"
+    "release:verify": "node scripts/verify-release.js",
+    "release:gate": "npm run check && npm run release:build && npm run release:verify"
   },
   "dependencies": {
     "basic-ftp": "^6.2.3",
