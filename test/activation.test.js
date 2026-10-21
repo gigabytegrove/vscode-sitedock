@@ -42,10 +42,29 @@ test('activation registers commands without attempting a network library downloa
   };
   const extensionPath=path.resolve(__dirname,'..');
   const ctx={extension:{packageJSON:{version:'0.3.0'}},extensionPath,globalStorageUri:{fsPath:path.join(extensionPath,'.test-global-storage')},subscriptions:[],globalState:{get:()=>[],update:async()=>{}},secrets:{get:async()=>undefined,store:async()=>{},delete:async()=>{}}};
+  // A normal open requires a saved profile and a remote stat. Stub the I/O
+  // adapter rather than downloading connection libraries during activation.
+  const site={id:'server-id',name:'Mock Site',host:'example.invalid',protocol:'sftp',
+    port:22,root:'/',auth:'password',user:'tester'};
+  ctx.globalState.get=(key,fallback)=>key==='sitedock.sites.v1'?[site]:fallback;
   const original=Module._load;
   let extension;
   try{
-    Module._load=function(specifier,parent,isMain){if(specifier==='vscode')return mock;return original.call(this,specifier,parent,isMain);};
+    Module._load=function(specifier,parent,isMain){
+      if(specifier==='vscode')return mock;
+      if(specifier==='./connection' && /[\\/]src[\\/]extension\.js$/.test(parent?.filename||'')){
+        const connection=original.call(this,specifier,parent,isMain);
+        return {...connection,SiteIO:class{
+          async run(id,method){
+            assert.equal(id,'server-id');
+            assert.equal(method,'stat');
+            return {type:'file',size:128,mtime:1};
+          }
+          async dispose(){}
+        }};
+      }
+      return original.call(this,specifier,parent,isMain);
+    };
     delete require.cache[require.resolve('../src/extension')];
     extension=require('../src/extension');
   } finally {Module._load=original;}

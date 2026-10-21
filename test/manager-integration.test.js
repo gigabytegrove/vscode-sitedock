@@ -40,7 +40,21 @@ test('Site Manager commands integrate with native explorer and keep existing cre
  };
  const original=Module._load;
  try{
-   Module._load=function(name,parent,isMain){if(name==='vscode')return fake;return original.call(this,name,parent,isMain);};
+   Module._load=function(name,parent,isMain){
+     if(name==='vscode')return fake;
+     if(name==='./connection' && /[\\/]src[\\/]extension\.js$/.test(parent?.filename||'')){
+       const connection=original.call(this,name,parent,isMain);
+       return {...connection,SiteIO:class{
+         async run(id,method){
+           assert.equal(id,'one');
+           assert.equal(method,'stat');
+           return {type:'file',size:128,mtime:1};
+         }
+         async dispose(){}
+       }};
+     }
+     return original.call(this,name,parent,isMain);
+   };
    delete require.cache[require.resolve('../src/extension')];
    const extension=require('../src/extension');
    await extension.activate(ctx);
