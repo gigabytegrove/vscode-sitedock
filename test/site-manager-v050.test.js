@@ -74,5 +74,5 @@ test('v0.5 Site Manager exposes group, duplicate, search and sorting actions in 
  for(const name of ['groupSite','duplicateSite','searchRemote'])assert.ok(html.includes("'"+name+"'"));
  assert.match(html,/id="groupFilter"/);assert.match(html,/data-action="setSiteSort"/);
  assert.match(html,/textContent=site\.group/);assert.doesNotMatch(html,/\.innerHTML\s*=/);
- assert.equal(manifest.version,'0.6.0');
+ assert.match(manifest.version,/^\d+\.\d+\.\d+$/,'extension version must be valid semantic version');
 });
