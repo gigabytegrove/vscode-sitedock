@@ -64,4 +64,9 @@ v0.4.0 was built using `@vscode/vsce`, passed 153 automated tests, and published
 
 v0.5.0 is now publicly published under the same GitHub repository. Its enhanced site organization is release-available but has not been independently accepted across every desktop and live server environment.
 
-v0.6.0 is **unreleased development source**. Its native remote clipboard, batch downloads, drag-and-drop uploads and bounded download retries require desktop and live-server acceptance. Do not treat a passing mocked test as proof that an OS file-manager drop or a transient network retry works in production.
+v0.6.0 is a **published GitHub prerelease for user testing**. Its native remote clipboard, batch downloads, drag-and-drop uploads and bounded download retries require desktop and live-server acceptance. Do not treat a passing mocked test as proof that an OS file-manager drop or a transient network retry works in production.
+### v0.7.0 transfer-visibility acceptance (outstanding)
+
+- Install an officially packaged build and validate live transfer speed, ETA and status bar updates with large files on FTP, FTPS and SFTP.
+- Test restart during a transfer, retry after a transient network failure, stalled progress, completion, and sanitized error text.
+- Verify no silent replay of uploads, deletes or previously interrupted work; confirm history and saved connections persist after reload.

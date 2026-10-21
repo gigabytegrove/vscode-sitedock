@@ -10,6 +10,7 @@ const {SiteWorkspaces}=require('./workspaces');
 const {ManagerTree}=require('./manager-tree');
 const {createManagerPanel}=require('./manager-panel');
 const {ActivityQueue,ActivityTree}=require('./activity');
+const {bytes:formatTransferBytes}=require('./transfer-progress');
 const {remotePath}=require('./paths');
 const {planUploadFolder,planDownloadFolder}=require('./bulk');
 const {validName,safeChildPath}=require('./paths');
@@ -158,11 +159,16 @@ async function activate(context) {
   const activityStatus=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,59);
   activityStatus.command='sitedock.showActivity';
   function updateActivityStatus(){
+    const jobs=activity.all;
     const active=activity.busy;
-    const failed=activity.all.filter(x=>x.status==='failed').length;
-    activityStatus.text=active?`$(sync~spin) SiteDock ${active} active`:failed?`$(warning) SiteDock ${failed} failed`:'$(history) SiteDock Activity';
+    const failed=jobs.filter(x=>x.status==='failed').length;
+    const running=jobs.filter(x=>x.status==='running');
+    const throughput=running.reduce((sum,x)=>sum+(Number.isSafeInteger(x.speedBytesPerSec)&&x.speedBytesPerSec>0?x.speedBytesPerSec:0),0);
+    const rate=throughput>0?` · ${formatTransferBytes(throughput)}/s`:'';
+    activityStatus.text=active?`$(sync~spin) SiteDock ${active} active${rate}`:failed?`$(warning) SiteDock ${failed} failed`:'$(history) SiteDock Activity';
     transfers.badge=active?{value:Math.min(99,active),tooltip:`${active} queued or running transfer(s)`}:undefined;
-    activityStatus.tooltip='Open SiteDock transfer and activity queue';
+    activityStatus.tooltip=active?`${running.length} running, ${active-running.length} queued${rate}. Open Transfers & Activity.`:
+      failed?`${failed} failed operations. Open Transfers & Activity.`:'Open SiteDock transfer and activity queue';
     activityStatus.show();
   }
   context.subscriptions.push(activity.onDidChange(updateActivityStatus),activityStatus);

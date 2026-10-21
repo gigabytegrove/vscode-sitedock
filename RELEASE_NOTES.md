@@ -1,22 +1,18 @@
-# SiteDock v0.6.0 — Remote file-management improvements (development)
+# SiteDock v0.7.0 — Transfer visibility and safety (development only)
 
-**Status: unreleased source.** v0.5.0 is the latest published GitHub Release; v0.4.0 was verified by the user for connectivity, editing, conflicts and downloads.
+**Not released.** v0.6.0 is available as a GitHub prerelease for desktop testing; v0.5.0 is the latest stable release.
 
-## Changes in v0.6.0 development
+## Source additions
 
-- Native multi-selection: batch move/delete with confirmation, collision and root guards.
-- SFTP staged uploads with size checks, permissions preservation, change detection and rollback attempts; full atomic replacement is not guaranteed across all servers.
-- Remote Copy/Paste of ordinary files/folders within the same site, bounded to 3,000 entries and 32 levels with symlink and collision checks.
-- Download Selected for multiple files/folders with one destination and Skip/Replace dialog.
-- Drag local files/folders into SiteDock's remote explorer. Dropped items are preflighted, confirmed and queued, with symlink exclusions and limits on in-memory files.
-- Bounded retries for transient **downloads only**, with no automatic replay of uploads/deletes/permission failures or restart-interrupted work.
+- Running Transfers & Activity entries show measured throughput and an ETA where total bytes are known.
+- VS Code status bar displays aggregate running transfer speed and keeps its existing Activity navigation.
+- Retry progress resets speed samples, and stalled progress drops stale rate estimates.
+- Activity errors redact connection URLs, Bearer/Basic authorization, and common credential fields, including previously persisted errors.
+- Unfinished work is still marked interrupted after VS Code restart, never silently replayed. No new automatic mutation retries.
 
-## Required release acceptance
+## Acceptance pending
 
-- Produce and verify the official `@vscode/vsce` package from the exact approved GitHub commit.
-- Use desktop VS Code to test all new controls including Windows Explorer drag/drop, file selection, activity and cancellation.
-- Test FTP/FTPS/SFTP copy/download, staged SFTP uploads, failures and collision behavior on controlled remote servers.
-- Confirm saved connections, credentials, open sites and settings survive upgrade.
-- Publish VSIX and matching SHA-256 to the **existing** `gigabytegrove/vscode-sitedock` repository only, using local direct publication, without GitHub Actions.
+- Exact-source full test suite on an npm-equipped checkout, official `@vscode/vsce` packaging, and desktop FTP/FTPS/SFTP testing.
+- Cross-platform VS Code validation and persisted activity history compatibility checks on real user installations.
 
-Passing mocked/unit tests is not the same as these end-to-end checks.
+No GitHub Actions are used. New releases, when approved, go directly to `gigabytegrove/vscode-sitedock`.

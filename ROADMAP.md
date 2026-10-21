@@ -4,7 +4,7 @@
 
 The GitHub-only v0.4.0 VSIX was officially packaged and published with SHA-256 verification. In-app upgrade from v0.3.1, FTP/FTPS/SFTP connectivity, live editing, conflict handling, and downloads were successfully tested in a desktop VS Code installation. Cross-platform coverage remains incomplete.
 
-## v0.5.0 published source / v0.6.0 development
+## v0.5.0 stable release / v0.6.0 published prerelease
 
 - Persistent site groups, filter by group, smart/name/hostname sorting.
 - Credential-safe duplication that requires configuring new authentication.
@@ -17,7 +17,7 @@ The GitHub-only v0.4.0 VSIX was officially packaged and published with SHA-256 v
 
 1. Remote copy/paste, multi-file downloads and drag-and-drop upload are now in v0.6.0 source; batch rename remains outstanding.
 2. Stronger remote concurrency detection and native server-side atomic rename when supported; investigate interrupted staging cleanup.
-3. Durable transfer retries/recovery, parallelism controls, pause/resume where supported, speed and ETA.
+3. Transfer speed and ETA: implemented in v0.7.0 development; durable restart-safe retry metadata, parallelism controls and true pause/resume remain outstanding.
 4. Synchronization: local/remote folder maps, dry-run, excludes, one-way/two-way policy and deletion safeguards.
 5. Site-level deployment profiles, staging previews and rollback.
 6. Remote refresh/monitoring, connection diagnostics, SSH agent/jump host support.
@@ -31,3 +31,10 @@ No feature is called complete without visible UI access, automated behavior test
 - Download Selected on multiple files/folders using one local destination and policy prompt; interrupted downloads remain visible as failures.
 - Newly implemented in v0.6.0 source: native tree drop of local files/folders and bounded automatic retry of transient downloads only.
 - Still outstanding: Windows/macOS/Linux drag-and-drop acceptance, true pause/resume, restart-safe transfer recovery, speed/ETA, and real-server verification.
+
+## v0.7.0 source development
+
+- Live throughput and estimated time remaining in the Transfers & Activity tree, with aggregate rate in the status bar.
+- 6-second rolling progress sampling with retry resets, malformed-byte bounds, and stale-rate handling.
+- Redacted errors and saved activity migration; interrupted jobs are not automatically replayed after restart.
+- Unit and mocked UI wiring coverage. Official packaging and live VS Code/server acceptance have **not** been performed for this development version.

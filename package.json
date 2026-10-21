@@ -2,7 +2,7 @@
   "name": "sitedock",
   "displayName": "SiteDock — Live FTP & SFTP",
   "description": "Multi-site FTP, FTPS and SFTP editor with organized Site Manager, safe remote file search, verified GitHub updates, and transfer activity.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "GigabyteGrove",
   "license": "MIT",
   "engines": {
@@ -707,7 +707,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/staged-upload.js && node --check src/remote-clipboard.js && node --check src/batch-operations.js && node --check src/search-remote.js && node --check src/site-profiles.js && node --check src/drop-uploads.js && node --check src/transfer-retry.js && node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
+    "check": "node --check src/transfer-progress.js && node --check src/staged-upload.js && node --check src/remote-clipboard.js && node --check src/batch-operations.js && node --check src/search-remote.js && node --check src/site-profiles.js && node --check src/drop-uploads.js && node --check src/transfer-retry.js && node --check src/extension.js && node --check src/updates.js && node --check src/update-utils.js && node --check src/update-vsix.js && node --check src/update-network.js && node --check src/workspaces.js && node --check src/manager-tree.js && node --check src/manager-panel.js && node --check src/opening.js && node --check src/storage.js && node --check src/connection.js && node --check src/filesystem.js && node --check src/tree.js && node --check src/editor.js && node --check src/paths.js && node --check src/runtime.js && node --check src/activity.js && node --check src/bulk.js && npm test",
     "package": "vsce package --allow-missing-repository",
     "package:all": "npm run check && npm run package",
     "release:build": "node scripts/build-release.js",

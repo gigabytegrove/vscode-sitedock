@@ -4,13 +4,13 @@
 
 **Download and update feed:** [`gigabytegrove/vscode-sitedock/releases`](https://github.com/gigabytegrove/vscode-sitedock/releases).
 
-The source, release tags, installable `.vsix`, matching `.sha256`, and release notes all live in this same repository. **Do not create `sitedock-releases` or configure a separate repository.** GitHub Actions and the Microsoft Marketplace are not required. v0.4.0 and v0.5.0 are published. v0.6.0 is development source and has not passed release acceptance.
+The source, release tags, installable `.vsix`, matching `.sha256`, and release notes all live in this same repository. **Do not create `sitedock-releases` or configure a separate repository.** GitHub Actions and the Microsoft Marketplace are not required. v0.4.0 and v0.5.0 are stable releases; v0.6.0 is published as a testing prerelease. v0.7.0 is development source only.
 
 ## Existing SiteDock v0.3.1 installations
 
 v0.3.1 already defaults to `sitedock.updates.repository = "gigabytegrove/vscode-sitedock"`, so users upgrading from that version should **not** have to change any settings. A user-defined override in VS Code Settings takes precedence over the default; check **SiteDock → Site Manager → Updates → Settings** if you changed it previously.
 
-The v0.4.0 source briefly used an incorrect `sitedock-releases` default. The corrected code returns to the **same repository used by v0.3.1**. v0.4.0 and v0.5.0 have been published. The v0.6.0 source will not become updater-visible until its own official package and GitHub Release are published.
+The v0.4.0 source briefly used an incorrect `sitedock-releases` default. The corrected code returns to the **same repository used by v0.3.1**. v0.4.0 and v0.5.0 have been published. The v0.6.0 prerelease is visible to clients on the Beta update channel. v0.7.0 is not available through GitHub Releases.
 
 ## 1. Prerequisites on the build computer
 
@@ -45,11 +45,11 @@ Or on Windows PowerShell:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-GitHub-Release.ps1
 ```
 
-For the currently developed `0.5.0`, the output will be:
+For development version `0.7.0`, the eventual output will be:
 
 ```text
-dist/sitedock-v0.6.0.vsix
-dist/sitedock-v0.6.0.vsix.sha256
+dist/sitedock-v0.7.0.vsix
+dist/sitedock-v0.7.0.vsix.sha256
 ```
 
 Both artifacts must pass the official `@vscode/vsce` packaging and checksum/extension-identity verifier. **Do not publish the manually packaged development VSIX** as an official release. If the official packager cannot run, the release remains blocked rather than substituting an unverified package.
@@ -70,7 +70,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Build-GitHub-Release.p
 
 Then verify the release at:
 
-`https://github.com/gigabytegrove/vscode-sitedock/releases/tag/v0.6.0`
+`https://github.com/gigabytegrove/vscode-sitedock/releases/tag/v0.7.0`
 
 Use `v<package-version>` as the tag; a beta version must be published as a prerelease. There must be **exactly one** uploaded `sitedock-*.vsix` and its exact matching `<filename>.sha256`. The release publisher should be authenticated with GitHub CLI; SiteDock's updater does not use those credentials.
 
