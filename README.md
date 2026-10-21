@@ -7,7 +7,7 @@
 
 **A Dreamweaver-inspired site manager and live FTP, FTPS & SFTP editor for Visual Studio Code.**
 
-![Version](https://img.shields.io/badge/version-0.7.0--development-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+![Version](https://img.shields.io/badge/version-0.7.1--development-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **[Quality and release gates](QUALITY_GATES.md)** · **[Get started](#getting-started) · [Site Manager](#site-manager) · [GitHub updates](#github-only-updates) · [Features](#features) · [Troubleshooting](#troubleshooting) · [Build & release](GITHUB_RELEASES.md)**
 </div>
@@ -252,3 +252,7 @@ Downloads receive up to two additional attempts only after transient network fai
 ## v0.7.0 development — transfer visibility and safety
 
 Running transfers now report measured throughput and estimated remaining time in **Transfers & Activity**, with aggregate transfer rate visible in the VS Code status bar. The values are calculated from observed byte progress, not a guarantee of remote durability or server commit. When a download restarts, stale speed samples are discarded. Activity history redacts FTP/FTPS/SFTP URLs, HTTP authorization headers and common credential fields, including when reopening an older saved entry. Work interrupted by a VS Code restart remains **interrupted** and is never automatically replayed. This source feature has not yet passed desktop or remote-server acceptance; v0.6.0 remains the latest published test build.
+
+### v0.7.1 corrective development
+
+The My Servers view now tears down and recreates its registered VS Code TreeView on deleted-site recovery, changes to visible site membership, or explicit refresh. This addresses a field report where a stale connection remained onscreen despite a refresh notification. Recovery does not delete remote files or remaining saved profiles. This fix still requires desktop validation before release.

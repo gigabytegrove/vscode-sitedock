@@ -56,10 +56,11 @@ async function activate(context) {
   const workspaces=new SiteWorkspaces(context,store);
   const io=new SiteIO(store,prepareConnections);disposeIO=()=>io.dispose();
   let tree,explorer,managerPanel;
+  let visibleSignature=workspaces.visibleSites().map(site=>site.id).join('\u0000');
   const managerTree=new ManagerTree(vscode,workspaces);
   const managerView=vscode.window.createTreeView('sitedock.managerSites',{treeDataProvider:managerTree});
   const refreshViews=(reset=false)=>{if(reset)tree?.reset();else tree?.refresh();managerTree.refresh();managerPanel?.update();};
-  const changed=()=>{refreshViews(true);void workspaces.sync().catch(err=>channel.appendLine('SiteDock workspace sync: '+errorMessage(err)));};
+  const changed=()=>{void workspaces.sync().then(()=>{rebuildExplorer();refreshViews(true);}).catch(err=>channel.appendLine('SiteDock workspace sync: '+errorMessage(err)));};
   const editor=createSiteEditor(vscode,context,store,io,changed);
   const doRemote=(siteId,op,...args)=>editor.perform(siteId,op,...args);
   tree=new SiteTree(vscode,store,doRemote,workspaces);
@@ -135,6 +136,24 @@ async function activate(context) {
     managerView.message=!store.all().length?'No saved sites yet. Use Site Manager to add your first server.':'';
   };
   updateExplorerMessage();
+  // VS Code may retain a removed TreeItem even after a provider refresh. Rebuild
+  // the registered My Servers view when its membership changes or the user
+  // requests a full refresh. Do not mutate SiteStore or the remote filesystem.
+  function rebuildExplorer(){
+    const previousView=explorer;
+    const previousTree=tree;
+    previousView?.dispose();
+    previousTree?.dispose();
+    tree=new SiteTree(vscode,store,doRemote,workspaces);
+    explorer=vscode.window.createTreeView('sitedock.sites',{
+      treeDataProvider:tree,showCollapseAll:true,canSelectMany:true,dragAndDropController
+    });
+    context.subscriptions.push(explorer,tree);
+    visibleSignature=workspaces.visibleSites().map(site=>site.id).join('\u0000');
+    updateExplorerMessage();
+    channel.appendLine('SiteDock: My Servers view reconstructed from saved connections ('+
+      store.all().length+' saved, '+workspaces.visibleSites().length+' visible).');
+  }
   const status=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,60);
   status.command='sitedock.refresh';
   const updateStatus=()=>{
@@ -154,7 +173,11 @@ async function activate(context) {
     workspaceStatus.tooltip=`SiteDock ${state.mode==='all'?'All Sites':'Site Manager'} · ${state.open.length} open · Click to switch`;
     workspaceStatus.show();updateExplorerMessage();
   };
-  context.subscriptions.push(workspaces.onChange(()=>{refreshViews(true);updateWorkspaceStatus();}),workspaceStatus);
+  context.subscriptions.push(workspaces.onChange(()=>{
+    const current=workspaces.visibleSites().map(site=>site.id).join('\u0000');
+    if(current!==visibleSignature)rebuildExplorer();else refreshViews(true);
+    updateWorkspaceStatus();
+  }),workspaceStatus);
   updateWorkspaceStatus();
   const activityStatus=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,59);
   activityStatus.command='sitedock.showActivity';
@@ -343,7 +366,7 @@ async function activate(context) {
     channel.show(true);
   });
   command('sitedock.edit',async node=>editor.open(node?.id || (await chooseSite())?.id));
-  command('sitedock.refresh',()=>refreshViews(true));
+  command('sitedock.refresh',()=>{rebuildExplorer();refreshViews(true);});
   async function chooseSite(){
     const list=store.all();
     if(!list.length){editor.open();return null;}
@@ -386,21 +409,21 @@ async function activate(context) {
     const site=requested?store.get(requested):await chooseSite();
     if(!site){
       if(requested){
-        await workspaces.sync();refreshViews(true);
-        vscode.window.showInformationMessage('That connection was already removed from Site Manager. The obsolete My Servers entry has been refreshed; no remote files were changed.');
+        await workspaces.sync();rebuildExplorer();refreshViews(true);
+        vscode.window.showInformationMessage('That connection was already removed from Site Manager. My Servers was reconstructed from saved connections; no remote files were changed.');
       }
       return;
     }
     const answer=await vscode.window.showWarningMessage(`Remove ${site.name} from SiteDock?`,{modal:true,detail:'Only the saved connection and credentials are removed. Remote files are not affected.'},'Remove Server');
     if(answer!=='Remove Server')return;
-    await io.invalidate(site.id);await store.remove(site.id);await workspaces.sync();refreshViews(true);updateStatus();
+    await io.invalidate(site.id);await store.remove(site.id);await workspaces.sync();rebuildExplorer();refreshViews(true);updateStatus();
   });
   async function requireLiveRemoteFile(node){
     if(!node||node.kind!=='entry'||node.type==='directory')throw new Error('Choose a remote file to open.');
     const site=store.get(node.id);
     if(!site){
-      refreshViews(true);
-      throw new Error('This remote file belongs to a connection that is no longer saved. My Servers was refreshed. Reopen the connection from Site Manager.');
+      rebuildExplorer();
+      throw new Error('This remote file belongs to a connection that is no longer saved. My Servers was reconstructed. Reopen the connection from Site Manager.');
     }
     if(node.broken||node.unresolved||(node.external&&!site.followExternalLinks))
       throw new Error('This symbolic link cannot be opened safely. Check its target and the site root.');

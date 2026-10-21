@@ -76,3 +76,9 @@ v0.6.0 is a **published GitHub prerelease for user testing**. Its native remote 
 - Delete a saved server while its My Servers tree is expanded and another saved server exists. The deleted server must disappear from every filtered mode; the other server's credentials and data must remain unchanged.
 - If VS Code retains a cached tree node, Remove Server refreshes its tree identity without deleting any remote file or unrelated saved connection. Clicking a stale remote file must show a useful connection error and must not offer to create a remote replacement.
 - Open a regular PHP/text file from the newly saved connection, verify bytes and normal live editing, and verify wrong Starting Directory produces a clear error without changing server contents.
+
+### v0.7.1 My Servers remount acceptance
+
+- With an obsolete server row visible and Site Manager containing a different saved connection, invoke Remove Server. The former TreeView must dispose and a new provider must show only visible saved sites.
+- Verify no unexpected site is deleted, connection secrets are preserved, and Site Manager and My Servers agree after switch/reload.
+- Confirm normal file open, explicit Refresh My Servers, and workspace-mode transitions on desktop VS Code. Mocked provider events alone are insufficient.
