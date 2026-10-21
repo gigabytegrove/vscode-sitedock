@@ -7,13 +7,13 @@
 
 **A Dreamweaver-inspired site manager and live FTP, FTPS & SFTP editor for Visual Studio Code.**
 
-![Version](https://img.shields.io/badge/version-0.6.0-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+![Version](https://img.shields.io/badge/version-0.7.0--development-blue) ![VS Code](https://img.shields.io/badge/VS%20Code-1.100%2B-007ACC) [![MIT License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **[Quality and release gates](QUALITY_GATES.md)** · **[Get started](#getting-started) · [Site Manager](#site-manager) · [GitHub updates](#github-only-updates) · [Features](#features) · [Troubleshooting](#troubleshooting) · [Build & release](GITHUB_RELEASES.md)**
 </div>
 
 > [!IMPORTANT]
-> **GitHub-only distribution.** SiteDock does not require the Visual Studio Marketplace. Install the first official VSIX manually; subsequent GitHub Releases can be checked and installed from inside VS Code. **The source repository is public:** official VSIX files and checksums are published directly under [gigabytegrove/vscode-sitedock/releases](https://github.com/gigabytegrove/vscode-sitedock/releases). No second repository is required. SiteDock v0.4.0 is available as the current published, tested baseline.
+> **GitHub-only distribution.** SiteDock does not require the Visual Studio Marketplace. Install the first official VSIX manually; subsequent GitHub Releases can be checked and installed from inside VS Code. **The source repository is public:** official VSIX files and checksums are published directly under [gigabytegrove/vscode-sitedock/releases](https://github.com/gigabytegrove/vscode-sitedock/releases). No second repository is required. SiteDock v0.4.0 was user-tested; v0.5.0 is stable and v0.6.0 is available as a GitHub prerelease for testing. v0.7.0 is development source only.
 
 ## Why SiteDock?
 
@@ -241,10 +241,14 @@ MIT licensed; third-party FTP/SFTP libraries retain their own license terms. Rep
 
 Use Ctrl/Shift in **My Servers** to select ordinary remote files and folders. **Copy Remote Items** holds their paths in SiteDock memory only; **Paste Remote Items** on an ordinary folder or site root copies them within the same remote site without replacing existing files. Selected folders are recursively traversed with a 3,000-entry and 32-level bound; symbolic and external links are not followed. Copies stream through an isolated temporary local file, which is removed when each operation completes or fails. Failed jobs are visible in **Transfers & Activity**.
 
-**Download Selected Remote Items** prompts once for a local destination and a Skip or Replace policy; it preflights all selected items before queueing, caps the combined transfer plan, and preserves their folder structures. Copies and downloads are queued sequentially. These features require live VS Code and server acceptance testing before v0.6.0 is published.
+**Download Selected Remote Items** prompts once for a local destination and a Skip or Replace policy; it preflights all selected items before queueing, caps the combined transfer plan, and preserves their folder structures. Copies and downloads are queued sequentially. These features require live VS Code and server acceptance testing before production acceptance of v0.6.0.
 
 ### Drag-and-drop uploads (v0.6.0 development)
 
 Drag local files and folders onto an ordinary remote folder or site root in **My Servers**. SiteDock asks whether to replace or skip existing remote files and tracks transfers in **Transfers & Activity**. Dropping onto files, symlinks, or blank space is rejected. Local symlinks are skipped, directory plans are capped at 3,000 entries/32 levels, and in-memory operating-system drops have 16 MiB per-file and 32 MiB total limits. Use **Upload Files** for larger in-memory drops.
 
-Downloads receive up to two additional attempts only after transient network failures, with visible retry messages and bounded delays. Auth, permission, conflict and destructive operations are not automatically replayed; interrupted work after VS Code restarts still needs manual intervention. These operations need actual desktop/live-server acceptance before v0.6.0 is released.
+Downloads receive up to two additional attempts only after transient network failures, with visible retry messages and bounded delays. Auth, permission, conflict and destructive operations are not automatically replayed; interrupted work after VS Code restarts still needs manual intervention. These operations need actual desktop/live-server acceptance before production acceptance of v0.6.0.
+
+## v0.7.0 development — transfer visibility and safety
+
+Running transfers now report measured throughput and estimated remaining time in **Transfers & Activity**, with aggregate transfer rate visible in the VS Code status bar. The values are calculated from observed byte progress, not a guarantee of remote durability or server commit. When a download restarts, stale speed samples are discarded. Activity history redacts FTP/FTPS/SFTP URLs, HTTP authorization headers and common credential fields, including when reopening an older saved entry. Work interrupted by a VS Code restart remains **interrupted** and is never automatically replayed. This source feature has not yet passed desktop or remote-server acceptance; v0.6.0 remains the latest published test build.

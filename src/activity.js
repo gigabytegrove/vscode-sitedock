@@ -1,5 +1,6 @@
 'use strict';
 const {randomUUID}=require('node:crypto');
+const {recordProgress,progressSummary,bytes}=require('./transfer-progress');
 
 // A bounded, credential-free journal of remote work, plus a FIFO transfer queue.
 // A restart marks unfinished work as interrupted; tasks cannot safely be replayed.
@@ -9,7 +10,12 @@ const STATES=new Set(['queued','running','completed','failed','cancelled','inter
 function safeMessage(err) {
   const value=String(err?.message||err||'Unknown error');
   // Never store credentials/URLs in history. Errors are for display only.
-  return value.replace(/(password|passphrase|token|secret)\s*[:=]\s*\S+/ig,'$1=[redacted]').slice(0,500);
+  return value
+    .replace(/\b(?:https?|ftps?|sftp):\/\/[^\s<>\"']+/gi,'[remote URL redacted]')
+    .replace(/\bAuthorization\s*:\s*(?:Basic|Bearer|Token)\s+[^\s,;]+/gi,'Authorization=[redacted]')
+    .replace(/\bBearer\s+[^\s,;]+/gi,'Bearer [redacted]')
+    .replace(/\b(password|passphrase|token|secret|api[_-]?key|authorization)\s*[:=]\s*[^\s,;]+/gi,'$1=[redacted]')
+    .slice(0,500);
 }
 class ActivityQueue {
   constructor(context,vscode) {
@@ -27,11 +33,13 @@ class ActivityQueue {
     this.jobs=(Array.isArray(historic)?historic:[]).filter(x=>x && STATES.has(x.status)).slice(0,MAX_HISTORY)
       .map(x=>({id:String(x.id),label:String(x.label).slice(0,200),siteName:String(x.siteName||''),kind:String(x.kind||'operation'),
         status:['queued','running'].includes(x.status)?'interrupted':x.status,createdAt:Number(x.createdAt)||Date.now(),
-        finishedAt:Number(x.finishedAt)||Date.now(),doneBytes:Number(x.doneBytes)||0,totalBytes:Number(x.totalBytes)||0,
-        message:x.status==='running'||x.status==='queued'?'Interrupted by VS Code restart. Please retry manually.':String(x.message||'').slice(0,500)}));
+        finishedAt:Number(x.finishedAt)||Date.now(),doneBytes:Number.isSafeInteger(x.doneBytes)&&x.doneBytes>=0?x.doneBytes:0,
+        totalBytes:Number.isSafeInteger(x.totalBytes)&&x.totalBytes>=0?x.totalBytes:0,
+        speedBytesPerSec:0,etaSeconds:null,
+        message:x.status==='running'||x.status==='queued'?'Interrupted by VS Code restart. Start the transfer again manually.':safeMessage(x.message||'')}));
     this.persistTail=Promise.resolve();
   }
-  get all(){return this.jobs.map(x=>({...x}));}
+  get all(){return this.jobs.map(({_progressSamples,_lastEmit,...job})=>({...job}));}
   get busy(){return this.jobs.filter(x=>x.status==='queued'||x.status==='running').length;}
   _changed(){
     // Keep queued/running jobs regardless of quantity: pruning them loses work.
@@ -59,33 +67,38 @@ class ActivityQueue {
     // all in-progress work is explicitly interrupted, never replayed silently.
     const record=this.jobs.filter(x=>x.status!=='queued'&&x.status!=='running').slice(0,MAX_HISTORY)
       .concat(this.jobs.filter(x=>x.status==='queued'||x.status==='running').slice(0,100))
-      .map(({_lastEmit,...rest})=>({...rest}));
+      .map(({_lastEmit,_progressSamples,...rest})=>({...rest}));
     this.persistTail=this.persistTail.catch(()=>{}).then(()=>this.context.globalState.update(STORAGE_KEY,record));
     await this.persistTail.catch(()=>{});
   }
   _insert(info,status){
     const job={id:randomUUID(),label:String(info.label||'Remote operation').slice(0,200),
       siteName:String(info.siteName||'').slice(0,80),kind:String(info.kind||'operation'),status,
-      createdAt:Date.now(),finishedAt:0,doneBytes:0,totalBytes:Number(info.totalBytes)||0,message:''};
+      createdAt:Date.now(),startedAt:status==='running'?Date.now():0,finishedAt:0,doneBytes:0,
+      totalBytes:Number.isSafeInteger(info.totalBytes)&&info.totalBytes>=0?info.totalBytes:0,
+      speedBytesPerSec:0,etaSeconds:null,message:''};
     this.jobs.unshift(job);this._changed();return job;
   }
   _update(job,status,fields={}){
     if(status)job.status=status;
+    if(status==='running'){job.startedAt=Date.now();job._progressSamples=[];job.speedBytesPerSec=0;job.etaSeconds=null;}
     Object.assign(job,fields);
+    if(status && status!=='running'){job._progressSamples=[];job.etaSeconds=null;}
     if(['completed','failed','cancelled','interrupted','skipped'].includes(status))job.finishedAt=Date.now();
     this._changed();
   }
   _report(job,doneBytes,totalBytes,message){
     if(job.status!=='running')return;
-    const total=Number.isFinite(totalBytes)&&totalBytes>=0?totalBytes:job.totalBytes;
-    const done=Number.isFinite(doneBytes)&&doneBytes>=0?doneBytes:job.doneBytes;
+    const total=Number.isSafeInteger(totalBytes)&&totalBytes>=0?totalBytes:job.totalBytes;
+    const done=Number.isSafeInteger(doneBytes)&&doneBytes>=0?doneBytes:job.doneBytes;
     if(done===job.doneBytes && total===job.totalBytes && message===job.message)return;
     const before=job.doneBytes;
     const oldTotal=job.totalBytes;
     const previousMessage=job.message;
-    job.doneBytes=done;job.totalBytes=total;if(message!==undefined)job.message=String(message).slice(0,200);
     const now=Date.now();
-    if(now-(job._lastEmit||0)>=250 || (total && done>=total) || previousMessage!==job.message || (!oldTotal && total) || Math.abs(done-before)>1024*1024){
+    recordProgress(job,done,total,now);
+    if(message!==undefined)job.message=safeMessage(message).slice(0,200);
+    if(now-(job._lastEmit||0)>=250 || (job.totalBytes && job.doneBytes>=job.totalBytes) || previousMessage!==job.message || (!oldTotal && job.totalBytes) || Math.abs(job.doneBytes-before)>1024*1024){
       job._lastEmit=now;this._changed();
     }
   }
@@ -161,9 +174,10 @@ class ActivityTree {
     item.iconPath=new v.ThemeIcon(icons[job.status]||'history');
     item.contextValue=job.retryable?'sitedock.activity.failedRetry':`sitedock.activity.${job.status}`;
     item.id=`activity:${job.id}`;
-    const percentage=job.totalBytes>0?` · ${Math.min(100,Math.floor(job.doneBytes/job.totalBytes*100))}%`:'';
-    item.description=`${job.status}${percentage}`;
-    item.tooltip=`${job.label}\nServer: ${job.siteName||'—'}\nStatus: ${job.status}\n${job.message||''}\n${new Date(job.createdAt).toLocaleString()}`;
+    item.description=progressSummary(job);
+    const amount=job.totalBytes>0?`\nTransferred: ${bytes(job.doneBytes)} / ${bytes(job.totalBytes)}`:
+      job.doneBytes>0?`\nTransferred: ${bytes(job.doneBytes)}`:'';
+    item.tooltip=`${job.label}\nServer: ${job.siteName||'—'}\nStatus: ${progressSummary(job)}${amount}\n${job.message||''}\n${new Date(job.createdAt).toLocaleString()}`;
     item.command={command:'sitedock.activityDetails',title:'Activity Details',arguments:[job.id]};
     return item;
   }
