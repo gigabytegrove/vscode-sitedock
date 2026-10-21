@@ -58,8 +58,8 @@ async function activate(context) {
   let tree,explorer,managerPanel;
   const managerTree=new ManagerTree(vscode,workspaces);
   const managerView=vscode.window.createTreeView('sitedock.managerSites',{treeDataProvider:managerTree});
-  const refreshViews=()=>{tree?.refresh();managerTree.refresh();managerPanel?.update();};
-  const changed=()=>{refreshViews();void workspaces.sync().catch(err=>channel.appendLine('SiteDock workspace sync: '+errorMessage(err)));};
+  const refreshViews=(reset=false)=>{if(reset)tree?.reset();else tree?.refresh();managerTree.refresh();managerPanel?.update();};
+  const changed=()=>{refreshViews(true);void workspaces.sync().catch(err=>channel.appendLine('SiteDock workspace sync: '+errorMessage(err)));};
   const editor=createSiteEditor(vscode,context,store,io,changed);
   const doRemote=(siteId,op,...args)=>editor.perform(siteId,op,...args);
   tree=new SiteTree(vscode,store,doRemote,workspaces);
@@ -154,7 +154,7 @@ async function activate(context) {
     workspaceStatus.tooltip=`SiteDock ${state.mode==='all'?'All Sites':'Site Manager'} · ${state.open.length} open · Click to switch`;
     workspaceStatus.show();updateExplorerMessage();
   };
-  context.subscriptions.push(workspaces.onChange(()=>{refreshViews();updateWorkspaceStatus();}),workspaceStatus);
+  context.subscriptions.push(workspaces.onChange(()=>{refreshViews(true);updateWorkspaceStatus();}),workspaceStatus);
   updateWorkspaceStatus();
   const activityStatus=vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,59);
   activityStatus.command='sitedock.showActivity';
@@ -343,7 +343,7 @@ async function activate(context) {
     channel.show(true);
   });
   command('sitedock.edit',async node=>editor.open(node?.id || (await chooseSite())?.id));
-  command('sitedock.refresh',refresh);
+  command('sitedock.refresh',()=>refreshViews(true));
   async function chooseSite(){
     const list=store.all();
     if(!list.length){editor.open();return null;}
@@ -382,14 +382,38 @@ async function activate(context) {
     vscode.window.showInformationMessage(`${site.name}: connection successful.`);
   });
   command('sitedock.remove',async node=>{
-    const site=store.get(node?.id || (await chooseSite())?.id);if(!site)return;
+    const requested=node?.id;
+    const site=requested?store.get(requested):await chooseSite();
+    if(!site){
+      if(requested){
+        await workspaces.sync();refreshViews(true);
+        vscode.window.showInformationMessage('That connection was already removed from Site Manager. The obsolete My Servers entry has been refreshed; no remote files were changed.');
+      }
+      return;
+    }
     const answer=await vscode.window.showWarningMessage(`Remove ${site.name} from SiteDock?`,{modal:true,detail:'Only the saved connection and credentials are removed. Remote files are not affected.'},'Remove Server');
     if(answer!=='Remove Server')return;
-    await io.invalidate(site.id);await store.remove(site.id);await workspaces.sync();refresh();updateStatus();
+    await io.invalidate(site.id);await store.remove(site.id);await workspaces.sync();refreshViews(true);updateStatus();
   });
+  async function requireLiveRemoteFile(node){
+    if(!node||node.kind!=='entry'||node.type==='directory')throw new Error('Choose a remote file to open.');
+    const site=store.get(node.id);
+    if(!site){
+      refreshViews(true);
+      throw new Error('This remote file belongs to a connection that is no longer saved. My Servers was refreshed. Reopen the connection from Site Manager.');
+    }
+    if(node.broken||node.unresolved||(node.external&&!site.followExternalLinks))
+      throw new Error('This symbolic link cannot be opened safely. Check its target and the site root.');
+    const path=remotePath(site,node.path);
+    const stat=await doRemote(site.id,'stat',path);
+    if(!stat||stat.type==='directory')
+      throw new Error(`Remote file not found: ${node.path} on ${site.name}. Refresh My Servers and verify the site's Starting Directory.`);
+    return uriFor(node);
+  }
   command('sitedock.open',async node=>{
-    if(!node || node.kind!=='entry' || node.type==='directory')return;
-    await openRemoteFile(vscode,uriFor(node),node.name || posix.basename(node.path));
+    if(!node||node.kind!=='entry'||node.type==='directory')return;
+    const uri=await requireLiveRemoteFile(node);
+    await openRemoteFile(vscode,uri,node.name||posix.basename(node.path));
   });
   command('sitedock.permissions',async node=>{
     if(!node||node.kind!=='entry'||!['file','directory'].includes(node.type)||node.symlink||node.externalBlocked)
@@ -415,15 +439,15 @@ async function activate(context) {
     const local=await vscode.window.showOpenDialog({title:`Compare ${node.name} with a local file`,canSelectFiles:true,canSelectFolders:false,canSelectMany:false});
     if(!local?.length)return;
     const site=store.get(node.id);if(!site)throw new Error('Site no longer exists.');
-    await vscode.commands.executeCommand('vscode.diff',local[0],uriFor(node),`${site.name}: Local ↔ Remote — ${node.name}`);
+    await vscode.commands.executeCommand('vscode.diff',local[0],await requireLiveRemoteFile(node),`${site.name}: Local ↔ Remote — ${node.name}`);
   });
   command('sitedock.openAsText',async node=>{
     if(!node || node.kind!=='entry' || node.type==='directory')return;
-    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(uriFor(node)),{preview:false});
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(await requireLiveRemoteFile(node)),{preview:false});
   });
   command('sitedock.openExternal',async node=>{
     if(!node || node.kind!=='entry' || node.type==='directory')return;
-    await openInDesktopApp(vscode,uriFor(node),node.name || posix.basename(node.path));
+    await openInDesktopApp(vscode,await requireLiveRemoteFile(node),node.name || posix.basename(node.path));
   });
   command('sitedock.openRoot',async node=>{const site=await getSelected(node);if(site)await openWindow(site.id);});
   command('sitedock.newFile',async node=>{

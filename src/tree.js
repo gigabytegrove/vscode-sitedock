@@ -6,24 +6,40 @@ function formatBytes(n){
   return `${n>=10?n.toFixed(0):n.toFixed(1)} ${units[unit]}`;
 }
 class SiteTree {
-  constructor(vscode,store,run,workspaces=null) {this.vscode=vscode;this.store=store;this.run=run;this.workspaces=workspaces;this.events=new vscode.EventEmitter();this.onDidChangeTreeData=this.events.event;}
+  constructor(vscode,store,run,workspaces=null) {this.vscode=vscode;this.store=store;this.run=run;this.workspaces=workspaces;this.events=new vscode.EventEmitter();this.onDidChangeTreeData=this.events.event;this.identityEpoch=0;}
   refresh(target) {this.events.fire(target);}
+  // Site membership changes invalidate VS Code's previously cached tree IDs.
+  reset() {this.identityEpoch++;this.events.fire(undefined);}
   getTreeItem(node) {
     const v=this.vscode;
     if (node.kind==='site') {
       const site=this.store.get(node.id);
       const item=new v.TreeItem(site?.name || 'Removed server',v.TreeItemCollapsibleState.Collapsed);
-      item.id=`site:${node.id}`;
+      item.id=`site:${node.id}:${this.identityEpoch}`;
+      if(!site){
+        item.description='Connection no longer saved';
+        item.contextValue='sitedock.site';item.iconPath=new v.ThemeIcon('warning');
+        item.command={command:'sitedock.refresh',title:'Refresh My Servers'};
+        return item;
+      }
       const active=this.workspaces?.snapshot.active===node.id&&this.workspaces?.snapshot.mode==='manager';
       item.description=site?`${active?'ACTIVE · ':''}${site.protocol.toUpperCase()} · ${site.host}`:'';
       item.tooltip=site?`${site.name}\n${site.protocol.toUpperCase()}://${site.host}:${site.port}${site.root}\nRight-click for server actions`:undefined;
       item.contextValue='sitedock.site'; item.iconPath=new v.ThemeIcon('server');return item;
     }
+    // An orphaned cached node must not be treated as a live remote resource.
+    if(!this.store.get(node.id)){
+      const old=new v.TreeItem('Outdated file entry — refresh My Servers',v.TreeItemCollapsibleState.None);
+      old.id=`stale:${node.id}:${node.path}:${this.identityEpoch}`;
+      old.contextValue='sitedock.staleEntry';old.iconPath=new v.ThemeIcon('warning');
+      old.command={command:'sitedock.refresh',title:'Refresh My Servers'};
+      return old;
+    }
     const isDir=node.type==='directory';
     const isLink=Boolean(node.symlink) || node.type==='symlink';
     const blocked=Boolean(node.external) && !this.store.get(node.id)?.followExternalLinks;
     const item=new v.TreeItem(node.name,isDir&&!blocked?v.TreeItemCollapsibleState.Collapsed:v.TreeItemCollapsibleState.None);
-    item.id=`entry:${node.id}:${node.path}`;
+    item.id=`entry:${node.id}:${node.path}:${this.identityEpoch}`;
     item.contextValue=blocked?'sitedock.outsideLink':isLink?((node.broken||node.unresolved)?'sitedock.brokenLink':isDir?'sitedock.directoryLink':'sitedock.fileLink'):isDir?'sitedock.directory':'sitedock.file';
     item.resourceUri=v.Uri.from({scheme:'sitedock',authority:node.id,path:node.path});
     item.iconPath=new v.ThemeIcon(isLink?(isDir?'file-symlink-directory':'file-symlink-file'):isDir?'folder':'file');
