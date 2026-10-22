@@ -256,3 +256,7 @@ Running transfers now report measured throughput and estimated remaining time in
 ### v0.7.1 corrective development
 
 The My Servers view now tears down and recreates its registered VS Code TreeView on deleted-site recovery, changes to visible site membership, or explicit refresh. This addresses a field report where a stale connection remained onscreen despite a refresh notification. Recovery does not delete remote files or remaining saved profiles. This fix still requires desktop validation before release.
+
+## Support Gigabyte Grove
+
+If this project is useful to you, you can support ongoing Gigabyte Grove development with an optional [PayPal donation](https://paypal.me/gigabytegrove). Donations are appreciated but never required to use this repository.
